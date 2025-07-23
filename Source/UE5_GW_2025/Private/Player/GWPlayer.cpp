@@ -11,7 +11,6 @@
 #include "InputMappingContext.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-// Sets default values
 AGWPlayer::AGWPlayer()
 {
  	// 毎フレーム呼ぶ
@@ -56,21 +55,18 @@ AGWPlayer::AGWPlayer()
 	LookAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_MouseLook"));
 }
 
-// Called when the game starts or when spawned
 void AGWPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
 }
 
-// Called every frame
 void AGWPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-// Called to bind functionality to input
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -92,20 +88,20 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AGWPlayer::MoveInput(const FInputActionValue& Value)
 {
-	// get the Vector2D move axis
+	// Vector2Dを取得する
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	// pass the axis values to the move input
+	// 値を渡す
 	DoMove(MovementVector.X, MovementVector.Y);
 
 }
 
 void AGWPlayer::LookInput(const FInputActionValue& Value)
 {
-	// get the Vector2D look axis
+	// Vector2Dを取得する
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	// pass the axis values to the aim input
+	// 値を渡す
 	DoAim(LookAxisVector.X, LookAxisVector.Y);
 
 }
@@ -114,7 +110,7 @@ void AGWPlayer::DoAim(float Yaw, float Pitch)
 {
 	if (GetController())
 	{
-		// pass the rotation inputs
+		// 回転入力を渡す
 		AddControllerYawInput(Yaw);
 		AddControllerPitchInput(Pitch);
 	}
@@ -124,7 +120,7 @@ void AGWPlayer::DoMove(float Right, float Forward)
 {
 	if (GetController())
 	{
-		// pass the move inputs
+		// 移動入力を渡す
 		AddMovementInput(GetActorRightVector(), Right);
 		AddMovementInput(GetActorForwardVector(), Forward);
 	}
@@ -132,13 +128,13 @@ void AGWPlayer::DoMove(float Right, float Forward)
 
 void AGWPlayer::DoJumpStart()
 {
-	// pass Jump to the character
+	// キャラクターのJumpを使用
 	Jump();
 }
 
 void AGWPlayer::DoJumpEnd()
 {
-	// pass StopJumping to the character
+	// キャラクターのStopJumpingを使用
 	StopJumping();
 }
 

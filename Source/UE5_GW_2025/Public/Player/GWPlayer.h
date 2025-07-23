@@ -7,6 +7,9 @@
 #include "InputActionValue.h"
 #include "GWPlayer.generated.h"
 
+/**
+ * GWプレイヤー
+ */
 UCLASS()
 class UE5_GW_2025_API AGWPlayer : public ACharacter
 {

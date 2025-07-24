@@ -9,8 +9,3 @@ AGWPlayerState::AGWPlayerState()
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AttributeSet = CreateDefaultSubobject<UPlayerAttributeSet>(TEXT("AttributeSet"));
 }
-
-UAbilitySystemComponent* AGWPlayerState::GetAbilitySystemComponent() const
-{
-	return AbilitySystemComponent;
-}

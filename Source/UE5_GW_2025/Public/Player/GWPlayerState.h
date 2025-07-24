@@ -18,7 +18,7 @@ class UE5_GW_2025_API AGWPlayerState : public APlayerState, public IAbilitySyste
 protected:
 
 	// AbilitySystemComponent
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	// AttributeSet
@@ -29,8 +29,9 @@ public:
 	// コンストラクタ
 	AGWPlayerState();
 
+public:
 	// AbilitySystemComponentを取得する
-	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 
 	// AttributeSetを取得する
 	class UAttributeSet* GetAttributeSet() const { return AttributeSet; };

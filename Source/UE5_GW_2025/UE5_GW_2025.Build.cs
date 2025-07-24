@@ -17,8 +17,9 @@ public class UE5_GW_2025 : ModuleRules
 			"AIModule",
 			"StateTreeModule",
 			"GameplayStateTreeModule",
-			"UMG"
-		});
+			"UMG",
+            "GameplayTags"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 

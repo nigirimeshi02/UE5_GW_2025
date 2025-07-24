@@ -53,6 +53,13 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+	// プレイヤーがこのキャラクターを操作し始めたときに呼ばれる関数
+	virtual void PossessedBy(AController* NewController) override;
+
+	// アビリティ付与処理
+	void InitializeAbilities();
+
+protected:
 
 	// 移動入力
 	void MoveInput(const FInputActionValue& Value);

@@ -10,6 +10,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Player/GWPlayerState.h"
+#include "AbilitySystemComponent.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -84,6 +86,51 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		// 視点操作
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGWPlayer::LookInput);
 	}
+}
+
+void AGWPlayer::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	// プレイヤーステートを取得し、そこから ASC を取得
+	AGWPlayerState* PS = GetPlayerState<AGWPlayerState>();
+	if (PS)
+	{
+		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+		if (ASC)
+		{
+			// GAS の必要情報（OwnerActor, AvatarActor）を設定
+			ASC->InitAbilityActorInfo(PS, this);
+
+			// サーバー側でアビリティの登録を行う（クライアントでは不要）
+			if (HasAuthority())
+			{
+				InitializeAbilities();
+			}
+		}
+	}
+}
+
+void AGWPlayer::InitializeAbilities()
+{
+	AGWPlayerState* PS = GetPlayerState<AGWPlayerState>();
+	if (!PS) return;
+
+	UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+	if (!ASC) return;
+
+	// Gameplay Ability のクラスをロード（例：ジャンプ用のアビリティ）
+	static ConstructorHelpers::FClassFinder<UGameplayAbility> JumpAbilityBP(TEXT("/Game/Abilities/GA_Jump"));
+	if (JumpAbilityBP.Succeeded())
+	{
+		// アビリティスペックを作成（レベル=1、スロット=0）
+		FGameplayAbilitySpec AbilitySpec(JumpAbilityBP.Class, 1, 0);
+
+		// ASC にアビリティを登録
+		ASC->GiveAbility(AbilitySpec);
+	}
+
+	// 必要なら他のアビリティもここで付与できる
 }
 
 void AGWPlayer::MoveInput(const FInputActionValue& Value)

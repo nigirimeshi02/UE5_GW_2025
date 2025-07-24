@@ -12,6 +12,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Player/GWPlayerState.h"
 #include "AbilitySystemComponent.h"
+#include "ShooterWeapon.h"
+#include "Components/PawnNoiseEmitterComponent.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -39,6 +41,9 @@ AGWPlayer::AGWPlayer()
 	FirstPersonCameraComponent->FirstPersonFieldOfView = 70.0f;
 	FirstPersonCameraComponent->FirstPersonScale = 0.6f;
 
+	// create the noise emitter component
+	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawn Noise Emitter"));
+
 	// キャラクターコンポーネントの設定をする
 	GetMesh()->SetOwnerNoSee(true);
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
@@ -48,6 +53,7 @@ AGWPlayer::AGWPlayer()
 	// キャラクターの移動の設定をする
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 	GetCharacterMovement()->AirControl = 0.5f;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
 
 	// IA_Jumpを読み込む
 	JumpAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Jump"));
@@ -119,18 +125,64 @@ void AGWPlayer::InitializeAbilities()
 	UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
 	if (!ASC) return;
 
-	// Gameplay Ability のクラスをロード（例：ジャンプ用のアビリティ）
-	static ConstructorHelpers::FClassFinder<UGameplayAbility> JumpAbilityBP(TEXT("/Game/Abilities/GA_Jump"));
-	if (JumpAbilityBP.Succeeded())
+	// Ability 情報を配列で定義（クラス、レベル、スロットID）
+	struct FAbilityInfo
 	{
-		// アビリティスペックを作成（レベル=1、スロット=0）
-		FGameplayAbilitySpec AbilitySpec(JumpAbilityBP.Class, 1, 0);
+		FString Path;     // アセットパス
+		int32 Level;      // アビリティのレベル
+		int32 InputID;    // 入力ID（0～）
+	};
 
-		// ASC にアビリティを登録
-		ASC->GiveAbility(AbilitySpec);
+	TArray<FAbilityInfo> AbilityList = {
+		{ TEXT("/Game/GameplayAbilitySystem/Abilities/GA_GrapplingHook"),   1, 0 },
+	};
+
+	// それぞれのアビリティを登録
+	for (const FAbilityInfo& Info : AbilityList)
+	{
+		ConstructorHelpers::FClassFinder<UGameplayAbility> AbilityBP(*Info.Path);
+		if (AbilityBP.Succeeded())
+		{
+			// AbilitySpec を作って登録（InputID はキー操作用）
+			FGameplayAbilitySpec Spec(AbilityBP.Class, Info.Level, Info.InputID);
+			ASC->GiveAbility(Spec);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("アビリティ '%s' が見つかりませんでした。"), *Info.Path);
+		}
+	}
+}
+
+float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	// ignore if already dead
+	if (CurrentHP <= 0.0f)
+	{
+		return 0.0f;
 	}
 
-	// 必要なら他のアビリティもここで付与できる
+	// Reduce HP
+	CurrentHP -= Damage;
+
+	// Have we depleted HP?
+	if (CurrentHP <= 0.0f)
+	{
+		// deactivate the weapon
+		if (IsValid(CurrentWeapon))
+		{
+			CurrentWeapon->DeactivateWeapon();
+		}
+
+
+		// reset the bullet counter UI
+		OnBulletCountUpdated.Broadcast(0, 0);
+
+		// destroy this character
+		Destroy();
+	}
+
+	return Damage;
 }
 
 void AGWPlayer::MoveInput(const FInputActionValue& Value)
@@ -185,3 +237,165 @@ void AGWPlayer::DoJumpEnd()
 	StopJumping();
 }
 
+void AGWPlayer::DoStartFiring()
+{
+	// fire the current weapon
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StartFiring();
+	}
+}
+
+void AGWPlayer::DoStopFiring()
+{
+	// stop firing the current weapon
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StopFiring();
+	}
+}
+
+void AGWPlayer::DoSwitchWeapon()
+{
+	// ensure we have at least two weapons two switch between
+	if (OwnedWeapons.Num() > 1)
+	{
+		// deactivate the old weapon
+		CurrentWeapon->DeactivateWeapon();
+
+		// find the index of the current weapon in the owned list
+		int32 WeaponIndex = OwnedWeapons.Find(CurrentWeapon);
+
+		// is this the last weapon?
+		if (WeaponIndex == OwnedWeapons.Num() - 1)
+		{
+			// loop back to the beginning of the array
+			WeaponIndex = 0;
+		}
+		else {
+			// select the next weapon index
+			++WeaponIndex;
+		}
+
+		// set the new weapon as current
+		CurrentWeapon = OwnedWeapons[WeaponIndex];
+
+		// activate the new weapon
+		CurrentWeapon->ActivateWeapon();
+	}
+}
+
+void AGWPlayer::AttachWeaponMeshes(AShooterWeapon* Weapon)
+{
+	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);
+
+	// attach the weapon actor
+	Weapon->AttachToActor(this, AttachmentRule);
+
+	// attach the weapon meshes
+	Weapon->GetFirstPersonMesh()->AttachToComponent(GetFirstPersonMesh(), AttachmentRule, FirstPersonWeaponSocket);
+	Weapon->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, FirstPersonWeaponSocket);
+}
+
+void AGWPlayer::PlayFiringMontage(UAnimMontage* Montage)
+{
+
+}
+
+void AGWPlayer::AddWeaponRecoil(float Recoil)
+{
+	// apply the recoil as pitch input
+	AddControllerPitchInput(Recoil);
+}
+
+void AGWPlayer::UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize)
+{
+	OnBulletCountUpdated.Broadcast(MagazineSize, CurrentAmmo);
+}
+
+FVector AGWPlayer::GetWeaponTargetLocation()
+{
+	// trace ahead from the camera viewpoint
+	FHitResult OutHit;
+
+	const FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
+	const FVector End = Start + (GetFirstPersonCameraComponent()->GetForwardVector() * MaxAimDistance);
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, QueryParams);
+
+	// return either the impact point or the trace end
+	return OutHit.bBlockingHit ? OutHit.ImpactPoint : OutHit.TraceEnd;
+}
+
+void AGWPlayer::AddWeaponClass(const TSubclassOf<AShooterWeapon>& WeaponClass)
+{
+	// do we already own this weapon?
+	AShooterWeapon* OwnedWeapon = FindWeaponOfType(WeaponClass);
+
+	if (!OwnedWeapon)
+	{
+		// spawn the new weapon
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::MultiplyWithRoot;
+
+		AShooterWeapon* AddedWeapon = GetWorld()->SpawnActor<AShooterWeapon>(WeaponClass, GetActorTransform(), SpawnParams);
+
+		if (AddedWeapon)
+		{
+			// add the weapon to the owned list
+			OwnedWeapons.Add(AddedWeapon);
+
+			// if we have an existing weapon, deactivate it
+			if (CurrentWeapon)
+			{
+				CurrentWeapon->DeactivateWeapon();
+			}
+
+			// switch to the new weapon
+			CurrentWeapon = AddedWeapon;
+			CurrentWeapon->ActivateWeapon();
+		}
+	}
+}
+
+void AGWPlayer::OnWeaponActivated(AShooterWeapon* Weapon)
+{
+	// update the bullet counter
+	OnBulletCountUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
+
+	// set the character mesh AnimInstances
+	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());
+	GetMesh()->SetAnimInstanceClass(Weapon->GetThirdPersonAnimInstanceClass());
+}
+
+void AGWPlayer::OnWeaponDeactivated(AShooterWeapon* Weapon)
+{
+	// unused
+}
+
+void AGWPlayer::OnSemiWeaponRefire()
+{
+	// unused
+}
+
+AShooterWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShooterWeapon> WeaponClass) const
+{
+	// check each owned weapon
+	for (AShooterWeapon* Weapon : OwnedWeapons)
+	{
+		if (Weapon->IsA(WeaponClass))
+		{
+			return Weapon;
+		}
+	}
+
+	// weapon not found
+	return nullptr;
+
+}

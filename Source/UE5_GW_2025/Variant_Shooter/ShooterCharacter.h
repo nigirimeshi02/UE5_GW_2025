@@ -12,7 +12,7 @@ class UInputAction;
 class UInputComponent;
 class UPawnNoiseEmitterComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBulletCountUpdatedDelegate, int32, MagazineSize, int32, Bullets);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBulletCountUpdatedDelegate, int32, MagazineSize, int32, Bullets);
 
 /**
  *  A player controllable first person shooter character

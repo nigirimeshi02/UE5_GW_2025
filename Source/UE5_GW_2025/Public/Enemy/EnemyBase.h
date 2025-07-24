@@ -26,12 +26,12 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
     TObjectPtr<UEnemyWeaponComponent> WeaponComponent;
 
+public:
+    virtual void Tick(float DeltaTime) override;
+
     // ƒvƒŒƒCƒ„[‚ğ”­Œ©‚µ‚½‚Æ‚«ŒÄ‚Î‚ê‚é
     UFUNCTION(BlueprintCallable)
     virtual void OnPlayerSpotted(APawn* PlayerPawn);
-
-public:
-    virtual void Tick(float DeltaTime) override;
 
     UFUNCTION(BlueprintCallable)
     virtual void AttackTarget();

@@ -1,6 +1,6 @@
 #include "Enemy/Walking/EnemyWalkingShooter.h"
 #include "Enemy/EnemyStateMachineComponent.h"
-#include "Enemy/EnemyWeaponComponent.h""
+#include "Enemy/EnemyWeaponComponent.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"

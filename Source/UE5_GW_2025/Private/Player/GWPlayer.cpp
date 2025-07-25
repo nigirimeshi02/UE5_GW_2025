@@ -59,8 +59,12 @@ AGWPlayer::AGWPlayer()
 	JumpAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Jump"));
 	// IA_Moveを読み込む
 	MoveAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Move"));
-	/// IA_MouseLookを読み込む
+	// IA_MouseLookを読み込む
 	LookAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_MouseLook"));
+	// IA_Shootを読み込む
+	FireAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Variant_Shooter/Input/Actions/IA_Shoot"));
+	// IA_SwapWeaponを読み込む
+	SwitchWeaponAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Variant_Shooter/Input/Actions/IA_SwapWeapon"));
 }
 
 void AGWPlayer::BeginPlay()
@@ -91,6 +95,13 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 		// 視点操作
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGWPlayer::LookInput);
+
+		// Firing
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &AGWPlayer::DoStartFiring);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &AGWPlayer::DoStopFiring);
+
+		// Switch weapon
+		EnhancedInputComponent->BindAction(SwitchWeaponAction, ETriggerEvent::Triggered, this, &AGWPlayer::DoSwitchWeapon);
 	}
 }
 

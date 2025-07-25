@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "ShooterWeaponHolder.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBulletCountUpdatedDelegate, int32, MagazineSize, int32, Bullets);
+
 class AShooterWeapon;
 class UAnimMontage;
 

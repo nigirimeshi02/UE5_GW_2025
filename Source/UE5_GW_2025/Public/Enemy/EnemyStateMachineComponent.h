@@ -34,10 +34,16 @@ public:
 
     void SetTarget(AActor* NewTarget);
 
+	AActor* GetTarget() const;
+
+    EEnemyState GetCurrentState() const;
+
+
 private:
     void HandleStateIdle(float DeltaTime);
     void HandleStatePatrol(float DeltaTime);
     void HandleStateChase(float DeltaTime);
     void HandleStateAttack(float DeltaTime);
+	void HandleStateSearch(float DeltaTime);
     void HandleStateDead(float DeltaTime);
 };

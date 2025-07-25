@@ -29,6 +29,16 @@ void UEnemyStateMachineComponent::SetTarget(AActor* NewTarget)
     TargetActor = NewTarget;
 }
 
+AActor* UEnemyStateMachineComponent::GetTarget() const
+{
+    return TargetActor;
+}
+
+EEnemyState UEnemyStateMachineComponent::GetCurrentState() const
+{
+	return CurrentState;
+}
+
 void UEnemyStateMachineComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -47,6 +57,9 @@ void UEnemyStateMachineComponent::TickComponent(float DeltaTime, ELevelTick Tick
     case EEnemyState::Attack:
         HandleStateAttack(DeltaTime);
         break;
+	case EEnemyState::Search:
+        HandleStateSearch(DeltaTime);
+		break;
     case EEnemyState::Dead:
         HandleStateDead(DeltaTime);
         break;
@@ -88,6 +101,11 @@ void UEnemyStateMachineComponent::HandleStateChase(float DeltaTime)
 void UEnemyStateMachineComponent::HandleStateAttack(float DeltaTime)
 {
     // 攻撃アニメーション、射撃処理など（WeaponComponentを使う）
+}
+
+void UEnemyStateMachineComponent::HandleStateSearch(float DeltaTime)
+{
+    // プレイヤーを見失った後の探索処理
 }
 
 void UEnemyStateMachineComponent::HandleStateDead(float DeltaTime)

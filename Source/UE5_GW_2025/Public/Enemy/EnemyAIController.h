@@ -21,14 +21,26 @@ protected:
 	/** AIの感知コンポーネント */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
     TObjectPtr<UAIPerceptionComponent> MyPerceptionComponent;
+
 	// AIの視覚感知設定
     UPROPERTY()
     TObjectPtr<UAISenseConfig_Sight> SightConfig;
-	// AIの感知設定
-    UFUNCTION()
-    void OnPerceptionUpdated(const TArray<AActor*>& UpdatedActors);
 
+	// 感知更新時のイベントハンドラ
+    UFUNCTION()
+    void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+	// 最後に感知したプレイヤーの位置
+    UPROPERTY()
+    FVector LastKnownPlayerLocation;
+
+    virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
+	
 public:
+    // ターゲットの最終位置に移動
+    UFUNCTION()
+    void MoveToLastKnownLocation();
+
     /** ターゲット設定 */
     UFUNCTION(BlueprintCallable)
     void SetTarget(APawn* NewTarget);

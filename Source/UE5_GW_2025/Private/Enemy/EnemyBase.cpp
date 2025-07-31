@@ -19,6 +19,17 @@ AEnemyBase::AEnemyBase()
 void AEnemyBase::BeginPlay()
 {
     Super::BeginPlay();
+
+    // ƒvƒŒƒCƒ„[‚ğ”­Œ©‚µ‚½‚Æ‚«‚Ìˆ—
+    if (AAIController* AIController = Cast<AAIController>(GetController()))
+    {
+        AEnemyAIController* EnemyAI = Cast<AEnemyAIController>(AIController);
+        if (EnemyAI)
+        {
+			EnemyAI->SetAcceptanceRadius(AcceptanceRadius);
+            UE_LOG(LogTemp, Log, TEXT("SetAcceptanceRadius"));
+        }
+    }
 }
 
 void AEnemyBase::Tick(float DeltaTime)

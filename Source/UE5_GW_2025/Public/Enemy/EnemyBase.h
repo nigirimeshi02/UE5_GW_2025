@@ -26,6 +26,9 @@ protected:
 	// 武器コンポーネント
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
     TObjectPtr<UEnemyWeaponComponent> WeaponComponent;
+	// プレイヤーとどこまで近づけるか
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
+    float AcceptanceRadius = 100.0f; // デフォルト値
 
 public:
     virtual void Tick(float DeltaTime) override;

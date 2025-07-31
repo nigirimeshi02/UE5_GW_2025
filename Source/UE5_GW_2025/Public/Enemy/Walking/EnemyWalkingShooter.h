@@ -23,15 +23,15 @@ public:
 
 protected:
     // e‚Ì”­ËŠÔŠui•bj
-    UPROPERTY(EditAnywhere, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     float FireInterval = 2.0f;
 
     // Ë’ö‹——£
-    UPROPERTY(EditAnywhere, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     float FireRange = 1000.0f;
 
     // ’eŠÛ‚ÌƒNƒ‰ƒX
-    UPROPERTY(EditAnywhere, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     TSubclassOf<AActor> BulletClass;
 
 private:

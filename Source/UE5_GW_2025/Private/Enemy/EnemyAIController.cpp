@@ -119,3 +119,8 @@ void AEnemyAIController::SetTarget(APawn* NewTarget)
 {
     TargetPawn = NewTarget;
 }
+
+void AEnemyAIController::SetAcceptanceRadius(float NewAcceptanceRadius)
+{
+    AcceptanceRadius = NewAcceptanceRadius;
+}

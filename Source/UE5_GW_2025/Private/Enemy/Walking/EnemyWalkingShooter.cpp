@@ -21,14 +21,37 @@ void AEnemyWalkingShooter::BeginPlay()
 void AEnemyWalkingShooter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    if (!StateMachine) return;
+
+    AActor* Target = StateMachine->GetTarget();
+    if (!Target) return;
+
+    float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
+
+    // UŒ‚”ÍˆÍ‚É“ü‚Á‚½‚ç Attack ó‘Ô‚É
+    if (Distance <= FireRange)
+    {
+        if (StateMachine->GetCurrentState() != EEnemyState::Attack)
+        {
+            StateMachine->ChangeState(EEnemyState::Attack);
+        }
+    }
+    else
+    {
+        // ”ÍˆÍŠO‚È‚ç’ÇÕ‚É–ß‚·
+        if (StateMachine->GetCurrentState() == EEnemyState::Attack)
+        {
+            StateMachine->ChangeState(EEnemyState::Chase);
+        }
+    }
 }
 
 void AEnemyWalkingShooter::TryShootAtPlayer()
 {
     if (!StateMachine) return;
 
-    if (StateMachine->GetCurrentState() != EEnemyState::Chase &&
-        StateMachine->GetCurrentState() != EEnemyState::Attack)
+    if (StateMachine->GetCurrentState() != EEnemyState::Attack)
     {
         return; // UŒ‚ó‘Ô‚¶‚á‚È‚¢‚ÆŒ‚‚½‚È‚¢
     }

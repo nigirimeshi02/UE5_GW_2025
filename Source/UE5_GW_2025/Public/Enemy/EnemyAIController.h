@@ -49,6 +49,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
     float AcceptanceRadius = 100.0f;
 
+    UFUNCTION(BlueprintCallable)
+    void SetAcceptanceRadius(float NewAcceptanceRadius);
+
 private:
     APawn* TargetPawn;
 };

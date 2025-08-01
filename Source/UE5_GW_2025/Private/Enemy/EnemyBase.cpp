@@ -19,6 +19,17 @@ AEnemyBase::AEnemyBase()
 void AEnemyBase::BeginPlay()
 {
     Super::BeginPlay();
+
+    // プレイヤーを発見したときの処理
+    if (AAIController* AIController = Cast<AAIController>(GetController()))
+    {
+        AEnemyAIController* EnemyAI = Cast<AEnemyAIController>(AIController);
+        if (EnemyAI)
+        {
+			EnemyAI->SetAcceptanceRadius(AcceptanceRadius);
+            UE_LOG(LogTemp, Log, TEXT("SetAcceptanceRadius"));
+        }
+    }
 }
 
 void AEnemyBase::Tick(float DeltaTime)
@@ -35,11 +46,34 @@ void AEnemyBase::OnPlayerSpotted(APawn* PlayerPawn)
         if (EnemyAI)
         {
             EnemyAI->SetTarget(PlayerPawn);
+            UE_LOG(LogTemp, Log, TEXT("Player Spotted!"));
         }
     }
 
     StateMachine->SetTarget(PlayerPawn);
     StateMachine->ChangeState(EEnemyState::Chase);
+}
+
+void AEnemyBase::OnPlayerLost()
+{
+    if (StateMachine)
+    {
+        StateMachine->ChangeState(EEnemyState::Idle);
+        StateMachine->SetTarget(nullptr);
+    }
+
+    if (AAIController* AIController = Cast<AAIController>(GetController()))
+    {
+        AIController->StopMovement();
+        AEnemyAIController* EnemyAI = Cast<AEnemyAIController>(AIController);
+        if (EnemyAI)
+        {
+            EnemyAI->SetTarget(nullptr);
+            EnemyAI->MoveToLastKnownLocation();
+        }
+    }
+	// 状態遷移：探し中
+    StateMachine->ChangeState(EEnemyState::Search);
 }
 
 
@@ -51,4 +85,14 @@ void AEnemyBase::AttackTarget()
 void AEnemyBase::MoveToTarget(APawn* Target)
 {
     // AIController 経由で MoveTo を行う想定
+}
+
+void AEnemyBase::OnSearchComplete()
+{
+    StateMachine->ChangeState(EEnemyState::Idle);
+}
+
+EEnemyState AEnemyBase::GetCurrentState() const
+{
+    return StateMachine->GetCurrentState(); // 状態取得
 }

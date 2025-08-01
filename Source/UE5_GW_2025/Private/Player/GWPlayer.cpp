@@ -13,6 +13,7 @@
 #include "Player/GWPlayerState.h"
 #include "AbilitySystemComponent.h"
 #include "ShooterWeapon.h"
+#include "Player/Weapon/ShootingWeapon.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 
 AGWPlayer::AGWPlayer()
@@ -187,7 +188,7 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 
 		// reset the bullet counter UI
-		OnBulletCountUpdated.Broadcast(0, 0);
+		OnMagazineUpdated.Broadcast(0, 0);
 
 		// destroy this character
 		Destroy();
@@ -296,7 +297,7 @@ void AGWPlayer::DoSwitchWeapon()
 	}
 }
 
-void AGWPlayer::AttachWeaponMeshes(AShooterWeapon* Weapon)
+void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 {
 	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);
 
@@ -321,7 +322,7 @@ void AGWPlayer::AddWeaponRecoil(float Recoil)
 
 void AGWPlayer::UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize)
 {
-	OnBulletCountUpdated.Broadcast(MagazineSize, CurrentAmmo);
+	OnMagazineUpdated.Broadcast(MagazineSize, CurrentAmmo);
 }
 
 FVector AGWPlayer::GetWeaponTargetLocation()
@@ -341,10 +342,10 @@ FVector AGWPlayer::GetWeaponTargetLocation()
 	return OutHit.bBlockingHit ? OutHit.ImpactPoint : OutHit.TraceEnd;
 }
 
-void AGWPlayer::AddWeaponClass(const TSubclassOf<AShooterWeapon>& WeaponClass)
+void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 {
 	// do we already own this weapon?
-	AShooterWeapon* OwnedWeapon = FindWeaponOfType(WeaponClass);
+	AShootingWeapon* OwnedWeapon = FindWeaponOfType(WeaponClass);
 
 	if (!OwnedWeapon)
 	{
@@ -355,7 +356,7 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShooterWeapon>& WeaponClass)
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::MultiplyWithRoot;
 
-		AShooterWeapon* AddedWeapon = GetWorld()->SpawnActor<AShooterWeapon>(WeaponClass, GetActorTransform(), SpawnParams);
+		AShootingWeapon* AddedWeapon = GetWorld()->SpawnActor<AShootingWeapon>(WeaponClass, GetActorTransform(), SpawnParams);
 
 		if (AddedWeapon)
 		{
@@ -375,17 +376,17 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShooterWeapon>& WeaponClass)
 	}
 }
 
-void AGWPlayer::OnWeaponActivated(AShooterWeapon* Weapon)
+void AGWPlayer::OnWeaponActivated(AShootingWeapon* Weapon)
 {
 	// update the bullet counter
-	OnBulletCountUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
+	OnMagazineUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
 
 	// set the character mesh AnimInstances
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());
 	GetMesh()->SetAnimInstanceClass(Weapon->GetThirdPersonAnimInstanceClass());
 }
 
-void AGWPlayer::OnWeaponDeactivated(AShooterWeapon* Weapon)
+void AGWPlayer::OnWeaponDeactivated(AShootingWeapon* Weapon)
 {
 	// unused
 }
@@ -395,10 +396,10 @@ void AGWPlayer::OnSemiWeaponRefire()
 	// unused
 }
 
-AShooterWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShooterWeapon> WeaponClass) const
+AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const
 {
 	// check each owned weapon
-	for (AShooterWeapon* Weapon : OwnedWeapons)
+	for (AShootingWeapon* Weapon : OwnedWeapons)
 	{
 		if (Weapon->IsA(WeaponClass))
 		{

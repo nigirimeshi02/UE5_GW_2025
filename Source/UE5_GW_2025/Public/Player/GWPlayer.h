@@ -5,180 +5,176 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "ShooterWeaponHolder.h"
+#include "Player/Weapon/ShootingWeaponHolder.h"
 #include "GWPlayer.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMagazineUpdatedDelegate, int32, MagazineSize, int32, Bullets);
 
 /**
  * GWプレイヤー
  */
 UCLASS()
-class UE5_GW_2025_API AGWPlayer : public ACharacter, public IShooterWeaponHolder
+class UE5_GW_2025_API AGWPlayer : public ACharacter, public IShootingWeaponHolder
 {
 	GENERATED_BODY()
 
-	// 一人称メッシュ
+	// 一人称視点で使用するスケルタルメッシュ
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USkeletalMeshComponent* FirstPersonMesh;
 
-	// 一人称カメラ
+	// 一人称カメラコンポーネント
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FirstPersonCameraComponent;
 
-	/** AI Noise emitter component */
+	// AI感知用ノイズエミッター
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UPawnNoiseEmitterComponent* PawnNoiseEmitter;
 
 protected:
-	// ジャンプアクション
+	// ジャンプ用のインプットアクション
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* JumpAction;
 
-	// 移動アクション
+	// 移動用のインプットアクション
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* MoveAction;
 
-	// 視点操作アクション
+	// 視点操作用のインプットアクション
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* LookAction;
 
-	/** Fire weapon input action */
+	// 射撃用のインプットアクション
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* FireAction;
 
-	/** Switch weapon input action */
+	// 武器切り替え用のインプットアクション
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SwitchWeaponAction;
 
-	/** Name of the first person mesh weapon socket */
+	// 一人称武器ソケットの名前
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	FName FirstPersonWeaponSocket = FName("HandGrip_R");
 
-	/** Name of the third person mesh weapon socket */
+	// 三人称武器ソケットの名前
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	FName ThirdPersonWeaponSocket = FName("HandGrip_R");
 
-	/** Max distance to use for aim traces */
+	// エイム用トレースの最大距離
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim")
 	float MaxAimDistance = 10000.0f;
 
-	/** Current HP remaining to this character */
+	// プレイヤーの現在HP
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float CurrentHP = 500.0f;
 
-	/** List of weapons picked up by the character */
-	TArray<class AShooterWeapon*> OwnedWeapons;
+	// 所持している武器一覧
+	TArray<class AShootingWeapon*> OwnedWeapons;
 
-	/** Weapon currently equipped and ready to shoot with */
-	TObjectPtr<class AShooterWeapon> CurrentWeapon;
+	// 現在装備中の武器
+	TObjectPtr<class AShootingWeapon> CurrentWeapon;
 
 public:
-	/** Bullet count updated delegate */
-	FBulletCountUpdatedDelegate OnBulletCountUpdated;
-
+	// マガジン更新時のデリゲート
+	FMagazineUpdatedDelegate OnMagazineUpdated;
 
 public:
 	// コンストラクタ
 	AGWPlayer();
 
 protected:
-	// ゲーム開始時に一度だけ呼ぶ関数
+	// ゲーム開始時に一度だけ呼ばれる関数
 	virtual void BeginPlay() override;
 
-public:	
-	// 毎フレーム呼ぶ関数
+public:
+	// 毎フレーム呼ばれる関数
 	virtual void Tick(float DeltaTime) override;
 
-	// インプットアクションのバインドを設定する
+	// インプットアクションのバインディング設定
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
-	// プレイヤーがこのキャラクターを操作し始めたときに呼ばれる関数
+	// このキャラクターをプレイヤーが操作し始めたときに呼ばれる
 	virtual void PossessedBy(AController* NewController) override;
 
-	// アビリティ付与処理
+	// アビリティの初期化（GameplayAbilitySystem など）
 	void InitializeAbilities();
 
 public:
-	/** Handle incoming damage */
+	// ダメージを受けたときに呼ばれる関数
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
-
-	// 移動入力
+	// 移動入力処理
 	void MoveInput(const FInputActionValue& Value);
 
-	// 視点操作入力
+	// 視点操作入力処理
 	void LookInput(const FInputActionValue& Value);
 
-	// エイム
+	// エイム処理（Yaw/Pitch指定）
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoAim(float Yaw, float Pitch);
 
-	// 移動
+	// 移動処理（方向指定）
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoMove(float Right, float Forward);
 
-	// ジャンプ開始
+	// ジャンプ開始処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpStart();
 
-	// ジャンプ終了
+	// ジャンプ終了処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpEnd();
 
-	/** Handles start firing input */
+	// 射撃開始処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoStartFiring();
 
-	/** Handles stop firing input */
+	// 射撃停止処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoStopFiring();
 
-	/** Handles switch weapon input */
+	// 武器切り替え処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoSwitchWeapon();
 
 public:
-	//~Begin IShooterWeaponHolder interface
+	// 武器のメッシュをキャラクターにアタッチする処理（インターフェース実装）
+	virtual void AttachWeaponMeshes(class AShootingWeapon* Weapon) override;
 
-	/** Attaches a weapon's meshes to the owner */
-	virtual void AttachWeaponMeshes(AShooterWeapon* Weapon) override;
-
-	/** Plays the firing montage for the weapon */
+	// 射撃アニメーションモンタージュを再生（インターフェース実装）
 	virtual void PlayFiringMontage(UAnimMontage* Montage) override;
 
-	/** Applies weapon recoil to the owner */
+	// 射撃による反動を適用（インターフェース実装）
 	virtual void AddWeaponRecoil(float Recoil) override;
 
-	/** Updates the weapon's HUD with the current ammo count */
+	// HUDに現在の弾数情報を更新（インターフェース実装）
 	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize) override;
 
-	/** Calculates and returns the aim location for the weapon */
+	// 武器用の照準位置を取得（インターフェース実装）
 	virtual FVector GetWeaponTargetLocation() override;
 
-	/** Gives a weapon of this class to the owner */
-	virtual void AddWeaponClass(const TSubclassOf<AShooterWeapon>& WeaponClass) override;
+	// 指定クラスの武器を追加（インターフェース実装）
+	virtual void AddWeaponClass(const TSubclassOf<class AShootingWeapon>& WeaponClass) override;
 
-	/** Activates the passed weapon */
-	virtual void OnWeaponActivated(AShooterWeapon* Weapon) override;
+	// 武器がアクティブになったときの処理（インターフェース実装）
+	virtual void OnWeaponActivated(class AShootingWeapon* Weapon) override;
 
-	/** Deactivates the passed weapon */
-	virtual void OnWeaponDeactivated(AShooterWeapon* Weapon) override;
+	// 武器が非アクティブになったときの処理（インターフェース実装）
+	virtual void OnWeaponDeactivated(class AShootingWeapon* Weapon) override;
 
-	/** Notifies the owner that the weapon cooldown has expired and it's ready to shoot again */
+	// セミオート武器の再発射可能通知（インターフェース実装）
 	virtual void OnSemiWeaponRefire() override;
 
-	//~End IShooterWeaponHolder interface
-
 protected:
-	/** Returns true if the character already owns a weapon of the given class */
-	AShooterWeapon* FindWeaponOfType(TSubclassOf<AShooterWeapon> WeaponClass) const;
+	// 指定クラスの武器をすでに所持しているかを確認
+	AShootingWeapon* FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const;
 
 public:
-	// 一人称メッシュを取得する
+	// 一人称メッシュを取得
 	USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
 
-	// 一人称カメラを取得する
+	// 一人称カメラを取得
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 };

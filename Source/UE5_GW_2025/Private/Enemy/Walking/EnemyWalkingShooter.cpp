@@ -69,7 +69,7 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
     // ’e‚ð”­ŽË
     if (BulletClass)
     {
-        FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(0, 0, 50.f);
+        FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 200.f + FVector(0, 0, 50.f);
         FActorSpawnParameters SpawnParams;
         GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, LookAt, SpawnParams);
 

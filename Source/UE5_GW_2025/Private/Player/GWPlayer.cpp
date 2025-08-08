@@ -15,6 +15,7 @@
 #include "ShooterWeapon.h"
 #include "Player/Weapon/ShootingWeapon.h"
 #include "Components/PawnNoiseEmitterComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AGWPlayer::AGWPlayer()
 {

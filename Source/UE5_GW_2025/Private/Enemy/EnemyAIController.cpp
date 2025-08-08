@@ -1,5 +1,6 @@
 #include "Enemy/EnemyAIController.h"
 #include "Enemy/EnemyBase.h"
+#include "Enemy/Flying/EnemyFlying.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
@@ -38,10 +39,24 @@ void AEnemyAIController::BeginPlay()
 void AEnemyAIController::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    // コントロールしているPawnを取得
+    APawn* ControlledPawn = GetPawn();
 
-    if (TargetPawn)
+    if (TargetPawn && ControlledPawn)
     {
-        MoveToActor(TargetPawn, AcceptanceRadius);
+        // 飛行タイプなら MoveToActor を使わない
+        if (ControlledPawn->IsA(AEnemyFlying::StaticClass()))
+        {
+            // 飛行キャラは自前で動く → AIControllerは移動指示しない
+            //return;
+            //UE_LOG(LogTemp, Log, TEXT("Move Actor!"));
+        }
+        else 
+        {
+            // プレイヤーが視界に入っている間移動
+            MoveToActor(TargetPawn, AcceptanceRadius);
+        }
+       
         //UE_LOG(LogTemp, Log, TEXT("Move Actor!"));
     }
 
@@ -75,7 +90,7 @@ void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 
     if (APawn* PlayerPawn = Cast<APawn>(Actor))
     {
-        if (Actor->ActorHasTag(TEXT("Enemy"))) { // 仮でEnemyタグを設定
+        if (Actor->ActorHasTag(TEXT("Player"))) { // 仮でEnemyタグを設定
 
             AEnemyBase* Enemy = Cast<AEnemyBase>(GetPawn());
             if (!Enemy) return;

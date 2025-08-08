@@ -14,6 +14,8 @@ AEnemyBase::AEnemyBase()
 	// AIController‚ÌƒNƒ‰ƒX‚ğİ’è
     AIControllerClass = AEnemyAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	// tags‚ğİ’è
+    Tags.Add(TEXT("Enemy"));
 }
 
 void AEnemyBase::BeginPlay()

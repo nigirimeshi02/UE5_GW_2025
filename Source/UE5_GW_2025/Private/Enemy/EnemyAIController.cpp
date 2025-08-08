@@ -75,21 +75,24 @@ void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 
     if (APawn* PlayerPawn = Cast<APawn>(Actor))
     {
-        AEnemyBase* Enemy = Cast<AEnemyBase>(GetPawn());
-        if (!Enemy) return;
+        if (Actor->ActorHasTag(TEXT("Enemy"))) { // 仮でEnemyタグを設定
 
-        if (Stimulus.WasSuccessfullySensed())
-        {
-            // プレイヤーが感知された（視界に入った）
-            UE_LOG(LogTemp, Warning, TEXT("Player spotted again"));
-            Enemy->OnPlayerSpotted(PlayerPawn);
-        }
-        else
-        {
-            // プレイヤーを見失った（視界から消えた）
-            UE_LOG(LogTemp, Warning, TEXT("Player lost"));
-			LastKnownPlayerLocation = Stimulus.StimulusLocation; // 最後に感知した位置を保存
-            Enemy->OnPlayerLost();
+            AEnemyBase* Enemy = Cast<AEnemyBase>(GetPawn());
+            if (!Enemy) return;
+
+            if (Stimulus.WasSuccessfullySensed())
+            {
+                // プレイヤーが感知された（視界に入った）
+                UE_LOG(LogTemp, Warning, TEXT("Player spotted again"));
+                Enemy->OnPlayerSpotted(PlayerPawn);
+            }
+            else
+            {
+                // プレイヤーを見失った（視界から消えた）
+                UE_LOG(LogTemp, Warning, TEXT("Player lost"));
+                LastKnownPlayerLocation = Stimulus.StimulusLocation; // 最後に感知した位置を保存
+                Enemy->OnPlayerLost();
+            }
         }
     }
 }

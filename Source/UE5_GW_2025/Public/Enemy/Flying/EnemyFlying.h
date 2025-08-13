@@ -42,4 +42,7 @@ protected:
 
     UPROPERTY(EditAnywhere, Category = "Flying")
     float FlySpeed = 300.0f; // 水平移動の速度
+
+    // プレイヤーをロストしたとき呼ばれる
+    virtual void OnPlayerLost() override;
 };

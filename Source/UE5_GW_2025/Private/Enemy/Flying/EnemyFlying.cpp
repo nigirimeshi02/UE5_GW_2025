@@ -104,3 +104,21 @@ void AEnemyFlying::Tick(float DeltaTime)
     SetActorLocation(NewLocation);
 }
 
+void AEnemyFlying::OnPlayerLost()
+{
+    if (StateMachine)
+    {
+        StateMachine->ChangeState(EEnemyState::Idle);
+        StateMachine->SetTarget(nullptr);
+    }
+
+    // ‚“x‚ðˆÛŽ‚·‚éê‡i—Ž‰º–hŽ~j
+    FVector CurrentLocation = GetActorLocation();
+    //SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, HoverAltitude));
+    SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, CurrentLocation.Z));
+
+    // ó‘Ô‘JˆÚF’T‚µ’†
+    StateMachine->ChangeState(EEnemyState::Search);
+    
+}
+

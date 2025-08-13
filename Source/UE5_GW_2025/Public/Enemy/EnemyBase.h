@@ -37,7 +37,7 @@ public:
     UFUNCTION(BlueprintCallable)
     virtual void OnPlayerSpotted(APawn* PlayerPawn);
 
-    // プレイヤーを発見したとき呼ばれる
+    // プレイヤーをロストしたとき呼ばれる
     UFUNCTION(BlueprintCallable)
     virtual void OnPlayerLost();
 

@@ -21,6 +21,8 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+
+
     void TryShootAtPlayer();
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")

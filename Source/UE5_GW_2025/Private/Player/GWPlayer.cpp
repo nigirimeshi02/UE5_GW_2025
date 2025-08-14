@@ -312,7 +312,7 @@ void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 
 void AGWPlayer::PlayFiringMontage(UAnimMontage* Montage)
 {
-
+	PlayAnimMontage(Montage);
 }
 
 void AGWPlayer::AddWeaponRecoil(float Recoil)

@@ -307,12 +307,12 @@ void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 
 	// attach the weapon meshes
 	Weapon->GetFirstPersonMesh()->AttachToComponent(GetFirstPersonMesh(), AttachmentRule, FirstPersonWeaponSocket);
-	Weapon->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, FirstPersonWeaponSocket);
+	Weapon->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, ThirdPersonWeaponSocket);
 }
 
 void AGWPlayer::PlayFiringMontage(UAnimMontage* Montage)
 {
-
+	PlayAnimMontage(Montage);
 }
 
 void AGWPlayer::AddWeaponRecoil(float Recoil)

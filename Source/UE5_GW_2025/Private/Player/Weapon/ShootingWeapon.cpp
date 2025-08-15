@@ -133,10 +133,17 @@ void AShootingWeapon::StopFiring()
 	GetWorld()->GetTimerManager().ClearTimer(RefireTimer);
 }
 
+void AShootingWeapon::Reload()
+{
+	WeaponOwner->PlayReloadMontage(ReloadMontage);
+
+	CurrentBullets = MagazineSize;
+}
+
 void AShootingWeapon::Fire()
 {
-	// 射撃中でなければ中断
-	if (!bIsFiring)
+	// 射撃中でなければ中断または残弾数が0以下なら中断
+	if (!bIsFiring || CurrentBullets <= 0)
 	{
 		return;
 	}
@@ -195,7 +202,7 @@ void AShootingWeapon::FireProjectile(const FVector& TargetLocation)
 	// 弾が空になったらリロードする
 	if (CurrentBullets <= 0)
 	{
-		CurrentBullets = MagazineSize;
+		//CurrentBullets = MagazineSize;
 	}
 
 	// HUD更新

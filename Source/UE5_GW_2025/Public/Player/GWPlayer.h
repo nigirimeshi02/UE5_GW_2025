@@ -51,6 +51,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* SwitchWeaponAction;
 
+	// リロード用のインプットアクション
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* ReloadAction;
+
 	// 一人称武器ソケットの名前
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	FName FirstPersonWeaponSocket = FName("HandGrip_R");
@@ -72,6 +76,9 @@ protected:
 
 	// 現在装備中の武器
 	TObjectPtr<class AShootingWeapon> CurrentWeapon;
+
+	// リロード中？
+	bool IsReload;
 
 public:
 	// マガジン更新時のデリゲート
@@ -138,32 +145,43 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoSwitchWeapon();
 
+	// リロード開始処理
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void DoReloadStart();
+
+	// リロード終了処理
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void DoReloadEnd(class UAnimMontage* Montage, bool bInterrupted);
+
 public:
-	// 武器のメッシュをキャラクターにアタッチする処理（インターフェース実装）
+	// 武器のメッシュをキャラクターにアタッチする処理
 	virtual void AttachWeaponMeshes(class AShootingWeapon* Weapon) override;
 
-	// 射撃アニメーションモンタージュを再生（インターフェース実装）
+	// 射撃アニメーションモンタージュを再生
 	virtual void PlayFiringMontage(UAnimMontage* Montage) override;
 
-	// 射撃による反動を適用（インターフェース実装）
+	// リロードアニメーションモンタージュを再生
+	virtual void PlayReloadMontage(UAnimMontage* Montage) override;
+
+	// 射撃による反動を適用
 	virtual void AddWeaponRecoil(float Recoil) override;
 
-	// HUDに現在の弾数情報を更新（インターフェース実装）
+	// HUDに現在の弾数情報を更新
 	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize) override;
 
-	// 武器用の照準位置を取得（インターフェース実装）
+	// 武器用の照準位置を取得
 	virtual FVector GetWeaponTargetLocation() override;
 
-	// 指定クラスの武器を追加（インターフェース実装）
+	// 指定クラスの武器を追加
 	virtual void AddWeaponClass(const TSubclassOf<class AShootingWeapon>& WeaponClass) override;
 
-	// 武器がアクティブになったときの処理（インターフェース実装）
+	// 武器がアクティブになったときの処理
 	virtual void OnWeaponActivated(class AShootingWeapon* Weapon) override;
 
-	// 武器が非アクティブになったときの処理（インターフェース実装）
+	// 武器が非アクティブになったときの処理
 	virtual void OnWeaponDeactivated(class AShootingWeapon* Weapon) override;
 
-	// セミオート武器の再発射可能通知（インターフェース実装）
+	// セミオート武器の再発射可能通知
 	virtual void OnSemiWeaponRefire() override;
 
 protected:

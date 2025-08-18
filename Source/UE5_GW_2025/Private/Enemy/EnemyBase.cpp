@@ -4,6 +4,9 @@
 #include "Enemy/EnemyWeaponComponent.h"
 #include "Enemy/EnemyAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Controller.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/CapsuleComponent.h"
 
 AEnemyBase::AEnemyBase()
 {
@@ -16,6 +19,9 @@ AEnemyBase::AEnemyBase()
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	// tagsを設定
     Tags.Add(TEXT("Enemy"));
+	// キャラクターの体力の初期化
+    PrimaryActorTick.bCanEverTick = true;
+    CurrentHealth = MaxHealth; // 初期体力
 }
 
 void AEnemyBase::BeginPlay()
@@ -97,4 +103,45 @@ void AEnemyBase::OnSearchComplete()
 EEnemyState AEnemyBase::GetCurrentState() const
 {
     return StateMachine->GetCurrentState(); // 状態取得
+}
+
+float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+    if (CurrentHealth <= 0.0f)
+    {
+        return 0.0f; // すでに死亡している場合は無視
+    }
+
+    // ダメージ適用
+    CurrentHealth -= DamageAmount;
+    UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage. CurrentHealth: %f"), DamageAmount, CurrentHealth);
+
+    // 死亡チェック
+    if (CurrentHealth <= 0.0f)
+    {
+        Die();
+    }
+
+    return DamageAmount;
+}
+
+void AEnemyBase::Die()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Enemy has died."));
+
+    // AIの動作を停止
+    AController* AIController = GetController();
+    if (AIController)
+    {
+        AIController->UnPossess();
+    }
+
+    // 衝突無効化
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+    // モンタージュ再生やアニメーション通知で死亡演出を追加しても良い
+    // 例: UAnimMontage* DeathMontage を再生
+
+    // 一定時間後に削除
+    SetLifeSpan(5.0f); // 5秒後に消滅
 }

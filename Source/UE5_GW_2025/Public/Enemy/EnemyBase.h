@@ -29,6 +29,12 @@ protected:
 	// プレイヤーとどこまで近づけるか
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
     float AcceptanceRadius = 100.0f; // デフォルト値
+    // 敵の体力
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enemy|Stats")
+    float MaxHealth = 100.0f;
+	// 現在の体力
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Stats")
+    float CurrentHealth;
 
 public:
     virtual void Tick(float DeltaTime) override;
@@ -52,4 +58,16 @@ public:
 
 	// 現在のステートを取得
     EEnemyState GetCurrentState() const;
+
+    // ダメージを受けた時
+    virtual float TakeDamage(
+        float DamageAmount,
+        struct FDamageEvent const& DamageEvent,
+        class AController* EventInstigator,
+        AActor* DamageCauser
+    ) override;
+
+    // 死亡処理
+    virtual void Die();
+
 };

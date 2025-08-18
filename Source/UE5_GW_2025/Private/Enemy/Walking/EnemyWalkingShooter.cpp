@@ -52,7 +52,8 @@ void AEnemyWalkingShooter::Tick(float DeltaTime)
         if (Controller)
         {
             Controller->SetControlRotation(NewRotation);
-            UE_LOG(LogTemp, Log, TEXT("%f %f %f"),NewRotation.Roll,NewRotation.Yaw,NewRotation.Pitch);
+			SetActorRotation(NewRotation);
+            //UE_LOG(LogTemp, Log, TEXT("%f %f %f"),NewRotation.Roll,NewRotation.Yaw,NewRotation.Pitch);
         }
     }
 

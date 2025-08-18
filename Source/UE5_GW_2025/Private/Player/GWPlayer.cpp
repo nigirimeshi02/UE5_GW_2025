@@ -57,7 +57,7 @@ AGWPlayer::AGWPlayer()
 	// キャラクターの移動の設定をする
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 	GetCharacterMovement()->AirControl = 0.5f;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 300.0f, 0.0f);
 
 	// IA_Jumpを読み込む
 	JumpAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Jump"));

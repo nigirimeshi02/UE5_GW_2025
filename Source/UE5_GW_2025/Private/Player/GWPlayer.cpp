@@ -16,6 +16,8 @@
 #include "Player/Weapon/ShootingWeapon.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -64,9 +66,13 @@ AGWPlayer::AGWPlayer()
 	// IA_MouseLookを読み込む
 	LookAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_MouseLook"));
 	// IA_Shootを読み込む
-	FireAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Variant_Shooter/Input/Actions/IA_Shoot"));
+	FireAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Shoot"));
 	// IA_SwapWeaponを読み込む
-	SwitchWeaponAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Variant_Shooter/Input/Actions/IA_SwapWeapon"));
+	SwitchWeaponAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_SwapWeapon"));
+	// IA_Reloadを読み込む
+	ReloadAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Reload"));
+
+	IsReload = false;
 }
 
 void AGWPlayer::BeginPlay()
@@ -104,6 +110,9 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 		// Switch weapon
 		EnhancedInputComponent->BindAction(SwitchWeaponAction, ETriggerEvent::Triggered, this, &AGWPlayer::DoSwitchWeapon);
+
+		// Reload
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AGWPlayer::DoReloadStart);
 	}
 }
 
@@ -252,8 +261,8 @@ void AGWPlayer::DoJumpEnd()
 
 void AGWPlayer::DoStartFiring()
 {
-	// fire the current weapon
-	if (CurrentWeapon)
+	// 現在の装備中の武器で射撃
+	if (CurrentWeapon && !IsReload)
 	{
 		CurrentWeapon->StartFiring();
 	}
@@ -270,6 +279,11 @@ void AGWPlayer::DoStopFiring()
 
 void AGWPlayer::DoSwitchWeapon()
 {
+	if (IsReload)
+	{
+		return;
+	}
+
 	// ensure we have at least two weapons two switch between
 	if (OwnedWeapons.Num() > 1)
 	{
@@ -298,6 +312,21 @@ void AGWPlayer::DoSwitchWeapon()
 	}
 }
 
+void AGWPlayer::DoReloadStart()
+{
+	// 装備中かつリロード中ではないなら
+	if (CurrentWeapon && !IsReload)
+	{
+		IsReload = true;
+		CurrentWeapon->Reload();
+	}
+}
+
+void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
+{
+	IsReload = false;
+}
+
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 {
 	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);
@@ -313,6 +342,31 @@ void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 void AGWPlayer::PlayFiringMontage(UAnimMontage* Montage)
 {
 	PlayAnimMontage(Montage);
+}
+
+void AGWPlayer::PlayReloadMontage(UAnimMontage* Montage)
+{
+	PlayAnimMontage(Montage);
+
+	if (UAnimMontage* MontageToPlay = Montage)
+	{
+		// 一人称メッシュからアニメーションインスタンスを取得
+		UAnimInstance* AnimInstance = GetFirstPersonMesh()->GetAnimInstance();
+
+		// アニメーションインスタンスが有効かつ、対象モンタージュが再生中でない場合
+		if (AnimInstance && !AnimInstance->Montage_IsPlaying(MontageToPlay))
+		{
+			// モンタージュを再生（再生速度 = 1.0f）
+			float Duration = AnimInstance->Montage_Play(MontageToPlay, 1.0f);
+
+			// 終了時に呼び出すデリゲートを作成・バインド
+			FOnMontageEnded MontageEndedDelegate;
+			MontageEndedDelegate.BindUObject(this, &AGWPlayer::DoReloadEnd);
+
+			// デリゲートを設定（指定モンタージュに対して）
+			AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, Montage);
+		}
+	}
 }
 
 void AGWPlayer::AddWeaponRecoil(float Recoil)

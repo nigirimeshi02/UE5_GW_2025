@@ -27,6 +27,9 @@ public:
 	// 武器の発射時のアニメーションモンタージュを再生する関数
 	virtual void PlayFiringMontage(UAnimMontage* Montage) = 0;
 
+	// リロード時のアニメーションモンタージュを再生する関数
+	virtual void PlayReloadMontage(UAnimMontage* Montage) = 0;
+
 	// 武器の反動を所持者に加える関数
 	virtual void AddWeaponRecoil(float Recoil) = 0;
 

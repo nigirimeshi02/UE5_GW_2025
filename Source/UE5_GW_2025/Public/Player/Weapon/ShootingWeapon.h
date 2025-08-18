@@ -39,6 +39,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	class UAnimMontage* FiringMontage;
 
+	// リロードのときのアニメーション
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	class UAnimMontage* ReloadMontage;
+
 	// 武器が使えるときの一人称視点メッシュのAnimInstanceクラス
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	TSubclassOf<class UAnimInstance> FirstPersonAnimInstanceClass;
@@ -126,6 +130,9 @@ public:
 
 	// 射撃終了
 	void StopFiring();
+
+	// リロード
+	void Reload();
 
 protected:
 	// 発砲処理

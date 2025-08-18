@@ -37,7 +37,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Hit")
 	float PhysicsForce = 100.0f;
 
-	// 命中時に与えるダメージ量
+	// 命中時に与える基礎ダメージ量
 	UPROPERTY(EditAnywhere, Category = "Hit")
 	float HitDamage = 25.0f;
 

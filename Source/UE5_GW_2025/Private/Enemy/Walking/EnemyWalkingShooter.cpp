@@ -27,6 +27,36 @@ void AEnemyWalkingShooter::Tick(float DeltaTime)
     AActor* Target = StateMachine->GetTarget();
     if (!Target) return;
 
+    // 回転テスト
+    // 水平方向のベクトル
+    FVector ToTarget = Target->GetActorLocation() - GetActorLocation();
+    ToTarget.Z = 0;
+
+    if (!ToTarget.IsNearlyZero())
+    {
+        // ターゲット方向の回転
+        FRotator TargetRotation = ToTarget.Rotation();
+
+        // 現在の回転を滑らかに補間
+        FRotator NewRotation = FMath::RInterpTo(
+            GetActorRotation(),
+            TargetRotation,
+            DeltaTime,
+            5.0f // ← 回転速度（大きいほど速く向く）
+        );
+
+        // テスト回転
+		MyRotation = NewRotation;
+
+        // コントローラーの向きを更新（アニメBP側で使用）
+        if (Controller)
+        {
+            Controller->SetControlRotation(NewRotation);
+            UE_LOG(LogTemp, Log, TEXT("%f %f %f"),NewRotation.Roll,NewRotation.Yaw,NewRotation.Pitch);
+        }
+    }
+
+
     float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
 
     // 攻撃範囲に入ったら Attack 状態に
@@ -64,7 +94,7 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
 
     // 銃の方向を向く（視線）
     FRotator LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
-    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
+    //SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
 
     // 弾を発射
     if (BulletClass)

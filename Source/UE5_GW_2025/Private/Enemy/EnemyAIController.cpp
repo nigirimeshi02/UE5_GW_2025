@@ -62,6 +62,7 @@ void AEnemyAIController::Tick(float DeltaTime)
 
     // Tick ‚É‚±‚ê‚ð’Ç‰Á‚µ‚Ä—lŽq‚ðŒ©‚é
     //UE_LOG(LogTemp, Log, TEXT("Enemy: %s, Target: %s"), *GetName(), TargetPawn ? *TargetPawn->GetName() : TEXT("None"));
+    UE_LOG(LogTemp, Log, TEXT("ControlRotation: %f %f %f"), ControlRotation.Roll, ControlRotation.Yaw, ControlRotation.Pitch);
 
     if (GetPawn())
     {

@@ -21,6 +21,9 @@ public:
     // UŒ‚ˆ—
     void TryShootAtPlayer();
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    FRotator MyRotation;
+
 protected:
     // e‚Ì”­ËŠÔŠui•bj
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")

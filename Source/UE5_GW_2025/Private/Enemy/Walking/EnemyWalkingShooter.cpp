@@ -15,7 +15,10 @@ void AEnemyWalkingShooter::BeginPlay()
     Super::BeginPlay();
 
     // 一定間隔で射撃を試みる
-    GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AEnemyWalkingShooter::TryShootAtPlayer, FireInterval, true);
+    //GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AEnemyWalkingShooter::TryShootAtPlayer, FireInterval, true);
+
+     // 最初の攻撃サイクル開始
+    StartFireCycle();
 }
 
 void AEnemyWalkingShooter::Tick(float DeltaTime)
@@ -95,6 +98,13 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
 
     // 銃の方向を向く（視線）
     FRotator LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
+
+    // ランダムにブレを加える（例：±5度）
+    float YawOffset = FMath::FRandRange(-5.f, 5.f);
+    float PitchOffset = FMath::FRandRange(-3.f, 3.f);
+
+    FRotator SpreadRotation = LookAt + FRotator(PitchOffset, YawOffset, 0.f);
+
     //SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
 
     // 弾を発射
@@ -102,8 +112,31 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
     {
         FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 200.f + FVector(0, 0, 50.f);
         FActorSpawnParameters SpawnParams;
-        GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, LookAt, SpawnParams);
+        GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
 
         UE_LOG(LogTemp, Log, TEXT("EnemyShooter: Fired!"));
+    }
+}
+
+void AEnemyWalkingShooter::StartFireCycle()
+{
+    ShotsFired = 0;
+    // バースト射撃開始（0秒後に最初の発射）
+    GetWorldTimerManager().SetTimer(BurstFireTimerHandle, this, &AEnemyWalkingShooter::BurstFire, BurstInterval, true, 0.0f);
+}
+
+void AEnemyWalkingShooter::BurstFire()
+{
+    // 実際の発射処理
+    TryShootAtPlayer();
+
+    ShotsFired++;
+    if (ShotsFired >= BurstCount)
+    {
+        // バースト終了 → タイマー停止
+        GetWorldTimerManager().ClearTimer(BurstFireTimerHandle);
+
+        // 次のサイクルを 1秒後に開始
+        GetWorldTimerManager().SetTimer(FireCycleTimerHandle, this, &AEnemyWalkingShooter::StartFireCycle, FireCycleInterval, false);
     }
 }

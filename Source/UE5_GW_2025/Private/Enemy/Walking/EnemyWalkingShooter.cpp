@@ -49,7 +49,7 @@ void AEnemyWalkingShooter::Tick(float DeltaTime)
         );
 
         // テスト回転
-		MyRotation = NewRotation;
+		//MyRotation = NewRotation;
 
         // コントローラーの向きを更新（アニメBP側で使用）
         if (Controller)
@@ -60,6 +60,8 @@ void AEnemyWalkingShooter::Tick(float DeltaTime)
         }
     }
 
+	// アニメーション用の回転を更新
+    MyRotation = (Target->GetActorLocation() - GetActorLocation()).Rotation();
 
     float Distance = FVector::Dist(GetActorLocation(), Target->GetActorLocation());
 
@@ -98,6 +100,7 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
 
     // 銃の方向を向く（視線）
     FRotator LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
+	//MyRotation = LookAt; // アニメーションBPで使用するための回転
 
     // ランダムにブレを加える（例：±5度）
     float YawOffset = FMath::FRandRange(-5.f, 5.f);
@@ -110,7 +113,7 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
     // 弾を発射
     if (BulletClass)
     {
-        FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 200.f + FVector(0, 0, 50.f);
+        //FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(-20.f, 0, 50.f);
         FActorSpawnParameters SpawnParams;
         GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
 

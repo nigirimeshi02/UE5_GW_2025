@@ -129,19 +129,27 @@ void AEnemyBase::Die()
 {
     UE_LOG(LogTemp, Warning, TEXT("Enemy has died."));
 
-    // AIの動作を停止
+    // AIの制御を外す
     AController* AIController = GetController();
     if (AIController)
     {
         AIController->UnPossess();
     }
 
-    // 衝突無効化
+    // 衝突は有効のままにしておく（ラグドールのため）
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-    // モンタージュ再生やアニメーション通知で死亡演出を追加しても良い
-    // 例: UAnimMontage* DeathMontage を再生
+    // メッシュをラグドール化
+    USkeletalMeshComponent* MeshComp = GetMesh();
+    if (MeshComp)
+    {
+        MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));   // Ragdoll用のコリジョンプリセット
+        MeshComp->SetSimulatePhysics(true);                   // 物理シミュレーション開始
+        MeshComp->SetAllBodiesSimulatePhysics(true);
+        MeshComp->WakeAllRigidBodies();
+        MeshComp->bBlendPhysics = true;                       // アニメーションから物理へ自然に移行
+    }
 
-    // 一定時間後に削除
-    SetLifeSpan(5.0f); // 5秒後に消滅
+    // 一定時間後に消滅
+    SetLifeSpan(10.0f);
 }

@@ -28,6 +28,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     FRotator MyRotation;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    FVector MuzzleLocation;
+
 protected:
     // èeÇÃî≠éÀä‘äuÅiïbÅj
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")

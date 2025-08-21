@@ -72,9 +72,11 @@ protected:
 	float CurrentHP = 500.0f;
 
 	// 所持している武器一覧
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	TArray<class AShootingWeapon*> OwnedWeapons;
 
 	// 現在装備中の武器
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	TObjectPtr<class AShootingWeapon> CurrentWeapon;
 
 	// リロード中？

@@ -35,6 +35,8 @@ AShootingWeapon::AShootingWeapon()
 	ThirdPersonMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::WorldSpaceRepresentation);
 	ThirdPersonMesh->bOwnerNoSee = true;
 
+	MagazineMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	MagazineMeshComp->SetupAttachment(RootComponent);
 }
 
 void AShootingWeapon::BeginPlay()
@@ -50,6 +52,9 @@ void AShootingWeapon::BeginPlay()
 
 	// マガジンを満タンにする
 	CurrentBullets = MagazineSize;
+
+	// マガジンをアタッチする
+	AttachMagazineMeshes();
 
 	// オーナーに武器メッシュをアタッチさせる
 	WeaponOwner->AttachWeaponMeshes(this);
@@ -222,6 +227,43 @@ FTransform AShootingWeapon::CalculateProjectileSpawnTransform(const FVector& Tar
 
 	// Transformで返す
 	return FTransform(AimRot, SpawnLoc, FVector::OneVector);
+}
+
+void AShootingWeapon::AttachMagazineMeshes()
+{
+	if (MagazineMesh.IsNull())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MagazineMesh is not set!"));
+		return;
+	}
+
+	// 同期ロード（即時）
+	UStaticMesh* Mesh = MagazineMesh.LoadSynchronous();
+	if (!Mesh) return;
+
+	// コンポーネント作成
+	MagazineMeshComp->SetStaticMesh(Mesh);
+	MagazineMeshComp->RegisterComponent();
+	MagazineMeshComp->SetOnlyOwnerSee(true);
+
+	// アタッチのルール
+	FAttachmentTransformRules AttachRules(EAttachmentRule::SnapToTarget, true);
+
+	// 一人称メッシュにアタッチする
+	MagazineMeshComp->AttachToComponent(GetFirstPersonMesh(), AttachRules, MagazineAttachSocketName);
+
+	// 三人称メッシュにアタッチする
+	//MagazineMeshComp->AttachToComponent(GetThirdPersonMesh(), AttachRules, MagazineAttachSocketName);
+
+	// マガジンのボーンを隠す
+	HideMagazineBone();
+}
+
+void AShootingWeapon::HideMagazineBone()
+{
+	// 非表示にする
+	GetFirstPersonMesh()->HideBoneByName(MagazineHideBoneName, EPhysBodyOp::PBO_None);
+	//GetThirdPersonMesh()->HideBoneByName(MagazineHideBoneName, EPhysBodyOp::PBO_None);
 }
 
 const TSubclassOf<UAnimInstance>& AShootingWeapon::GetFirstPersonAnimInstanceClass() const

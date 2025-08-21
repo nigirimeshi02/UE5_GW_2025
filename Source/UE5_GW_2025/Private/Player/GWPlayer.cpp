@@ -325,16 +325,18 @@ void AGWPlayer::DoReloadStart()
 void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsReload = false;
+
+	OnMagazineUpdated.Broadcast(CurrentWeapon->GetMagazineSize(), CurrentWeapon->GetBulletCount());
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
 {
 	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);
 
-	// attach the weapon actor
+	// 武器をアクターにアタッチする
 	Weapon->AttachToActor(this, AttachmentRule);
 
-	// attach the weapon meshes
+	// 武器をメッシュにアタッチする
 	Weapon->GetFirstPersonMesh()->AttachToComponent(GetFirstPersonMesh(), AttachmentRule, FirstPersonWeaponSocket);
 	Weapon->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, ThirdPersonWeaponSocket);
 }

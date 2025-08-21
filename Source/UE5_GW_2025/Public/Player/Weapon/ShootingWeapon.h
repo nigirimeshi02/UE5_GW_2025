@@ -37,11 +37,11 @@ protected:
 
 	// 銃を撃つときのアニメーション
 	UPROPERTY(EditAnywhere, Category = "Animation")
-	class UAnimMontage* FiringMontage;
+	TObjectPtr<class UAnimMontage> FiringMontage;
 
 	// リロードのときのアニメーション
 	UPROPERTY(EditAnywhere, Category = "Animation")
-	class UAnimMontage* ReloadMontage;
+	TObjectPtr<class UAnimMontage> ReloadMontage;
 
 	// 武器が使えるときの一人称視点メッシュのAnimInstanceクラス
 	UPROPERTY(EditAnywhere, Category = "Animation")
@@ -99,6 +99,22 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Perception")
 	FName ShotNoiseTag = FName("Shot");
 	
+	// 追加するマガジンのメッシュ
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Magazine")
+	TSoftObjectPtr<UStaticMesh> MagazineMesh;
+
+	// アタッチしたいマガジンのソケット名
+	UPROPERTY(EditAnywhere, Category = "Magazine")
+	FName MagazineAttachSocketName;
+
+	// 隠したいマガジンのボーン名
+	UPROPERTY(EditAnywhere, Category = "Magazine")
+	FName MagazineHideBoneName;
+
+	// マガジンのメッシュコンポーネント
+	TObjectPtr<UStaticMeshComponent> MagazineMeshComp;
+
+
 public:	
 	// コンストラクタ
 	AShootingWeapon();
@@ -147,6 +163,12 @@ protected:
 	// 弾の発射位置計算処理
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
 
+	// マガジンのメッシュをアタッチする処理
+	void AttachMagazineMeshes();
+
+	// マガジンのボーンを隠す処理
+	void HideMagazineBone();
+
 public:
 	// FirstPersonMeshを取得
 	UFUNCTION(BlueprintPure, Category = "Weapon")
@@ -168,4 +190,7 @@ public:
 	// 現在のマガジン内の弾の数を取得
 	int32 GetBulletCount() const { return CurrentBullets; }
 
+	// マガジンのメッシュコンポーネントを取得
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	UStaticMeshComponent* GetMagazineMeshComp()const { return MagazineMeshComp; }
 };

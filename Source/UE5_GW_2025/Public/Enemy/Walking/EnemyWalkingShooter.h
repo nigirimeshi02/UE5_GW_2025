@@ -21,8 +21,15 @@ public:
     // 攻撃処理
     void TryShootAtPlayer();
 
+	void StartFireCycle();
+
+	void BurstFire();
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     FRotator MyRotation;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    FVector MuzzleLocation;
 
 protected:
     // 銃の発射間隔（秒）
@@ -39,4 +46,11 @@ protected:
 
 private:
     FTimerHandle FireTimerHandle;
+
+    FTimerHandle FireCycleTimerHandle;   // 攻撃サイクル（3発撃って1秒休む）
+    FTimerHandle BurstFireTimerHandle;   // バースト内の1発ごとのタイマー
+    int32 ShotsFired = 0;                // バースト内で何発撃ったか
+    int32 BurstCount = 3;                // 1バーストの発射数
+    float BurstInterval = 0.2f;          // 連射間隔（秒）
+    float FireCycleInterval = 1.0f;      // バーストごとの待機時間
 };

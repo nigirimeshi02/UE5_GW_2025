@@ -6,6 +6,6 @@
 AGWPlayerCameraManager::AGWPlayerCameraManager()
 {
 	// ピッチの最小最大を設定する
-	ViewPitchMin = -50.0f;
+	ViewPitchMin = -70.0f;
 	ViewPitchMax = 80.0f;
 }

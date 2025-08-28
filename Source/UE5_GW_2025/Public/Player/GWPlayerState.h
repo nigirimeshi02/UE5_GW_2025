@@ -23,7 +23,7 @@ protected:
 
 	// AttributeSet
 	UPROPERTY()
-	TObjectPtr<class UAttributeSet> AttributeSet;
+	TObjectPtr<class UPlayerAttributeSet> AttributeSet;
 
 public:
 	// コンストラクタ
@@ -34,6 +34,6 @@ public:
 	virtual class UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
 
 	// AttributeSetを取得する
-	class UAttributeSet* GetAttributeSet() const { return AttributeSet; };
+	class UPlayerAttributeSet* GetAttributeSet() const { return AttributeSet; };
 
 };

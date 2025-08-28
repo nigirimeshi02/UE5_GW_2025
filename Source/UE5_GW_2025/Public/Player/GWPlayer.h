@@ -67,10 +67,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Aim")
 	float MaxAimDistance = 10000.0f;
 
-	// プレイヤーの現在HP
-	UPROPERTY(EditAnywhere, Category = "Health")
-	float CurrentHP = 500.0f;
-
 	// 所持している武器一覧
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	TArray<class AShootingWeapon*> OwnedWeapons;

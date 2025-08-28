@@ -18,7 +18,11 @@ public class UE5_GW_2025 : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-            "GameplayTags"
+            "GameplayTags",
+            "Chaos",                 // ★ Chaos 本体
+			"ChaosSolverEngine",     // ★ Chaos 破壊システム
+			"GeometryCollectionEngine", // ★ GeometryCollection コンポーネント
+			"FieldSystemEngine"      // ★ FieldSystem (RadialFalloffなど)
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

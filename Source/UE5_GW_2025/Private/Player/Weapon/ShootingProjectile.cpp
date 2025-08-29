@@ -9,6 +9,9 @@
 #include "GameFramework/DamageType.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Controller.h"
+#include "Player/GWPlayerController.h"
+#include "Player/GWPlayerState.h"
+#include "Abilities/PlayerAttributeSet.h"
 
 AShootingProjectile::AShootingProjectile()
 {
@@ -87,6 +90,15 @@ void AShootingProjectile::Tick(float DeltaTime)
 
 void AShootingProjectile::DamageCharacter(ACharacter* HitCharacter, const FHitResult& Hit)
 {
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetOwner()->GetInstigatorController());
+
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+	float Damage = GWPS->GetAttributeSet()->GetAttackPower() + HitDamage;
+
+	FVector ShotDirection = GetActorForwardVector();
+
 	// GameplayStatics を使ってダメージを適用
-	UGameplayStatics::ApplyDamage(HitCharacter, HitDamage, GetInstigator()->GetController(), this, HitDamageType);
+	//UGameplayStatics::ApplyDamage(HitCharacter, Damage, GetInstigator()->GetController(), this, HitDamageType);
+	UGameplayStatics::ApplyPointDamage(HitCharacter, Damage, ShotDirection, Hit, GWPC, this, HitDamageType);
 }

@@ -16,8 +16,10 @@
 #include "Player/Weapon/ShootingWeapon.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "Player/GWPlayerController.h"
+#include "Abilities/PlayerAttributeSet.h"
+#include "Engine/DamageEvents.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -155,8 +157,9 @@ void AGWPlayer::InitializeAbilities()
 		int32 InputID;    // 入力ID（0～）
 	};
 
-	TArray<FAbilityInfo> AbilityList = {
-		{ TEXT("/Game/GameplayAbilitySystem/Abilities/GA_GrapplingHook"),   1, 0 },
+	TArray<FAbilityInfo> AbilityList = 
+	{
+
 	};
 
 	// それぞれのアビリティを登録
@@ -178,17 +181,28 @@ void AGWPlayer::InitializeAbilities()
 
 float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	// ignore if already dead
-	if (CurrentHP <= 0.0f)
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetOwner()->GetInstigatorController());
+	
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+
+	// PointDamageEvent か RadialDamageEvent かを判別
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
-		return 0.0f;
+		const FPointDamageEvent* PointDamageEvent = (FPointDamageEvent*)&DamageEvent;
+		if (PointDamageEvent->HitInfo.BoneName.IsEqual(FName("head")))
+		{
+			//ダメージ2倍にする
+		}
+		FName HitBone = PointDamageEvent->HitInfo.BoneName;
+		UE_LOG(LogTemp, Log, TEXT("PlayerHit:%s"), *HitBone.ToString());
 	}
 
-	// Reduce HP
-	CurrentHP -= Damage;
+	AttributeSet->SetHealth(AttributeSet->GetHealth() - Damage);
 
 	// Have we depleted HP?
-	if (CurrentHP <= 0.0f)
+	if (AttributeSet->GetHealth() <= 0.0f)
 	{
 		// deactivate the weapon
 		if (IsValid(CurrentWeapon))
@@ -196,12 +210,13 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 			CurrentWeapon->DeactivateWeapon();
 		}
 
-
 		// reset the bullet counter UI
 		OnMagazineUpdated.Broadcast(0, 0);
 
 		// destroy this character
 		Destroy();
+
+		return 0.f;
 	}
 
 	return Damage;

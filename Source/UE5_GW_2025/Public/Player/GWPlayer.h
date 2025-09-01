@@ -193,4 +193,8 @@ public:
 	// 一人称カメラを取得
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+	UFUNCTION(BlueprintPure)
+	AShootingWeapon* GetCurrentWeapon()const { return CurrentWeapon; }
+
+
 };

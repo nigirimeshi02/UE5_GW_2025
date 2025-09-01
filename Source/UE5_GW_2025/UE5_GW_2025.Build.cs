@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -19,10 +19,11 @@ public class UE5_GW_2025 : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
             "GameplayTags",
-            "Chaos",                 // š Chaos –{‘Ì
-			"ChaosSolverEngine",     // š Chaos ”j‰óƒVƒXƒeƒ€
-			"GeometryCollectionEngine", // š GeometryCollection ƒRƒ“ƒ|[ƒlƒ“ƒg
-			"FieldSystemEngine"      // š FieldSystem (RadialFalloff‚È‚Ç)
+            "Chaos",                 // â˜… Chaos æœ¬ä½“
+			"ChaosSolverEngine",     // â˜… Chaos ç ´å£Šã‚·ã‚¹ãƒ†ãƒ 
+			"GeometryCollectionEngine", // â˜… GeometryCollection ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+			"FieldSystemEngine",      // â˜… FieldSystem (RadialFalloffãªã©)
+			"Niagara"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

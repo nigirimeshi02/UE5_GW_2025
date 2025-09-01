@@ -181,25 +181,33 @@ void AGWPlayer::InitializeAbilities()
 
 float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetOwner()->GetInstigatorController());
+	
+	float FinalDamage = Damage;
+
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
 	
 	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
 
 	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
-
+	
 	// PointDamageEvent か RadialDamageEvent かを判別
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		const FPointDamageEvent* PointDamageEvent = (FPointDamageEvent*)&DamageEvent;
-		if (PointDamageEvent->HitInfo.BoneName.IsEqual(FName("head")))
-		{
-			//ダメージ2倍にする
-		}
+
+		// ヒットしたボーン名を取得
 		FName HitBone = PointDamageEvent->HitInfo.BoneName;
-		UE_LOG(LogTemp, Log, TEXT("PlayerHit:%s"), *HitBone.ToString());
+
+		UE_LOG(LogTemp, Log, TEXT("Hit Bone: %s"), *HitBone.ToString());
+
+		// ヘッドショット判定（ボーン名が "head" の場合）
+		if (HitBone == FName("head"))
+		{
+			FinalDamage *= 2.0f; // 2倍ダメージ
+		}
 	}
 
-	AttributeSet->SetHealth(AttributeSet->GetHealth() - Damage);
+	AttributeSet->SetHealth(AttributeSet->GetHealth() - FinalDamage);
 
 	// Have we depleted HP?
 	if (AttributeSet->GetHealth() <= 0.0f)
@@ -219,7 +227,7 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 		return 0.f;
 	}
 
-	return Damage;
+	return FinalDamage;
 }
 
 void AGWPlayer::MoveInput(const FInputActionValue& Value)

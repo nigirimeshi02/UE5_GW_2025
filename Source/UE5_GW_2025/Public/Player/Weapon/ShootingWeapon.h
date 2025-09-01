@@ -114,7 +114,18 @@ protected:
 	// マガジンのメッシュコンポーネント
 	TObjectPtr<UStaticMeshComponent> MagazineMeshComp;
 
+	// マズルフラッシュのエフェクト
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	TObjectPtr<class UNiagaraSystem> MuzzleFlashEffect;
 
+	// マズルフラッシュの位置
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	FVector MuzzleFlashLocation;
+
+	// マズルフラッシュの回転
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	FRotator MuzzleFlashRotation;
+	
 public:	
 	// コンストラクタ
 	AShootingWeapon();

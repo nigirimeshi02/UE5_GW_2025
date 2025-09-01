@@ -10,6 +10,8 @@
 #include "Animation/AnimInstance.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Pawn.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 AShootingWeapon::AShootingWeapon()
 {
@@ -151,6 +153,20 @@ void AShootingWeapon::Fire()
 	if (!bIsFiring || CurrentBullets <= 0)
 	{
 		return;
+	}
+
+	// マズルフラッシュを再生
+	if (MuzzleFlashEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAttached(
+			MuzzleFlashEffect,
+			FirstPersonMesh,
+			TEXT("Muzzle"), // ソケット名
+			MuzzleFlashLocation,
+			MuzzleFlashRotation,
+			EAttachLocation::SnapToTargetIncludingScale,
+			true
+		);
 	}
 
 	// FireProjectile() を呼んで弾を撃つ

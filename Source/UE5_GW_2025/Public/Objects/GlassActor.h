@@ -17,6 +17,7 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
     UPROPERTY(VisibleAnywhere, Category = "Glass")
     UGeometryCollectionComponent* GlassCollection;
@@ -26,5 +27,13 @@ protected:
         UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
     UPROPERTY(EditAnywhere, Category = "Glass")
+    UMaterialInterface* BrokenGlassMaterial; // エディタで割れた後のガラス材質を指定
+
+    UFUNCTION()
+    void OnGlassBroken(const FChaosBreakEvent& BreakEvent);
+
+    UPROPERTY(EditAnywhere, Category = "Glass")
     float BreakSpeedThreshold = 600.0f;
+
+	bool bIsBroken = false;
 };

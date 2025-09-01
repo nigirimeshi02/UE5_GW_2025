@@ -8,7 +8,7 @@
 
 AGlassActor::AGlassActor()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
 
     GlassCollection = CreateDefaultSubobject<UGeometryCollectionComponent>(TEXT("GC_Cube"));
     RootComponent = GlassCollection;
@@ -18,11 +18,35 @@ AGlassActor::AGlassActor()
 
     GlassCollection->SetSimulatePhysics(true);
     GlassCollection->SetNotifyBreaks(true); // 破砕イベント通知を有効化
+
+    GlassCollection->OnChaosBreakEvent.AddDynamic(this, &AGlassActor::OnGlassBroken);
 }
 
 void AGlassActor::BeginPlay()
 {
     Super::BeginPlay();
+}
+
+void AGlassActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+    if (bIsBroken)
+    {
+        if (BrokenGlassMaterial)
+        {
+            int32 NumMaterials = GlassCollection->GetNumMaterials();
+            for (int32 i = 0; i < NumMaterials; i++)
+            {
+                GlassCollection->SetMaterial(i, BrokenGlassMaterial);
+            }
+            UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Material Changed!"));
+        }
+        else 
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Not Changed!"));
+        }
+    }
 }
 
 void AGlassActor::OnGlassHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
@@ -33,7 +57,9 @@ void AGlassActor::OnGlassHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
     FVector Velocity = OtherComp->GetComponentVelocity();
     float Speed = Velocity.Size();
 
-    if (Speed > BreakSpeedThreshold)
+    if (!bIsBroken) bIsBroken = true;
+
+    if (Speed > BreakSpeedThreshold)//入ってない
     {
         UE_LOG(LogTemp, Warning, TEXT("Glass Fractured! Speed: %f"), Speed);
 
@@ -53,6 +79,22 @@ void AGlassActor::OnGlassHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
             nullptr,
             RadialFalloff
         );
+
+    
+    }
+}
+
+void AGlassActor::OnGlassBroken(const FChaosBreakEvent& BreakEvent)
+{
+	if (!bIsBroken) bIsBroken = true;
+    if (BrokenGlassMaterial)
+    {
+        int32 NumMaterials = GlassCollection->GetNumMaterials();
+        for (int32 i = 0; i < NumMaterials; i++)
+        {
+            GlassCollection->SetMaterial(i, BrokenGlassMaterial);
+        }
+        UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Material Changed!"));
     }
 }
 

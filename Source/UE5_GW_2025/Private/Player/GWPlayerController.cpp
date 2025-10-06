@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Player/GWPlayer.h"
 #include "UI/BulletCounter.h"
+#include "UI/HPBar.h"
 
 void AGWPlayerController::BeginPlay()
 {
@@ -15,6 +16,10 @@ void AGWPlayerController::BeginPlay()
 	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
 	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
 	BulletCounterUI->AddToPlayerScreen(0);
+
+	// HPバーのUIウィジェットを作成し、画面に追加する
+	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
+	HPBarUI->AddToPlayerScreen(1);
 }
 
 void AGWPlayerController::SetupInputComponent()
@@ -44,6 +49,9 @@ void AGWPlayerController::OnPossess(APawn* InPawn)
 
 		// 弾数が更新されたイベントにバインド
 		GWPlayer->OnMagazineUpdated.AddDynamic(this, &AGWPlayerController::OnBulletCountUpdated);
+
+		// HPバーが更新されたイベントにバインド
+		GWPlayer->OnHPBarUpdated.AddDynamic(this, &AGWPlayerController::OnHPBarUpdated);
 	}
 }
 
@@ -74,4 +82,10 @@ void AGWPlayerController::OnBulletCountUpdated(int32 MagazineSize, int32 Bullets
 {
 	// UIに弾数を反映
 	BulletCounterUI->BP_UpdateBulletCount(MagazineSize, Bullets);
+}
+
+void AGWPlayerController::OnHPBarUpdated(float MaxHP, float CurrentHP)
+{
+	// UIにHPを反映
+	HPBarUI->BP_UpdateHPBar(MaxHP, CurrentHP);
 }

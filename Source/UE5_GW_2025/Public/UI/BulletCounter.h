@@ -16,8 +16,8 @@ class UE5_GW_2025_API UBulletCounter : public UUserWidget
 	
 public:
 
-	/** Allows Blueprint to update sub-widgets with the new bullet count */
-	UFUNCTION(BlueprintImplementableEvent, Category = "Shooter", meta = (DisplayName = "UpdateBulletCounter"))
+	// 弾数を更新する
+	UFUNCTION(BlueprintImplementableEvent, Category = "BulletCounter", meta = (DisplayName = "UpdateBulletCounter"))
 	void BP_UpdateBulletCount(int32 MagazineSize, int32 BulletCount);
 
 };

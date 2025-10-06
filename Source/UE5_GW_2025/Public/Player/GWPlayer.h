@@ -9,6 +9,7 @@
 #include "GWPlayer.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMagazineUpdatedDelegate, int32, MagazineSize, int32, Bullets);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHPUpdatedDelegate, float, MaxHP, float, CurrentHP);
 
 /**
  * GWプレイヤー
@@ -81,6 +82,9 @@ protected:
 public:
 	// マガジン更新時のデリゲート
 	FMagazineUpdatedDelegate OnMagazineUpdated;
+
+	// HP更新時のデリゲート
+	FHPUpdatedDelegate OnHPBarUpdated;
 
 public:
 	// コンストラクタ
@@ -185,6 +189,10 @@ public:
 protected:
 	// 指定クラスの武器をすでに所持しているかを確認
 	AShootingWeapon* FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const;
+
+public:
+	// HUDに現在のHP情報を更新
+	void UpdateHPHUD(int32 CurrentHP, int32 MaxHP);
 
 public:
 	// 一人称メッシュを取得

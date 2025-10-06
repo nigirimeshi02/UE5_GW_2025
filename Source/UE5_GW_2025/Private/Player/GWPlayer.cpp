@@ -47,7 +47,7 @@ AGWPlayer::AGWPlayer()
 	FirstPersonCameraComponent->FirstPersonFieldOfView = 70.0f;
 	FirstPersonCameraComponent->FirstPersonScale = 0.6f;
 
-	// create the noise emitter component
+	// ノイズエミッターコンポーネントを作成する
 	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawn Noise Emitter"));
 
 	// キャラクターコンポーネントの設定をする
@@ -80,6 +80,7 @@ AGWPlayer::AGWPlayer()
 void AGWPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
 
 }
 
@@ -121,6 +122,14 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AGWPlayer::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
+
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+
+	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 
 	// プレイヤーステートを取得し、そこから ASC を取得
 	AGWPlayerState* PS = GetPlayerState<AGWPlayerState>();
@@ -209,19 +218,23 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 	AttributeSet->SetHealth(AttributeSet->GetHealth() - FinalDamage);
 
-	// Have we depleted HP?
+	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+
+	// HPがなくなった？
 	if (AttributeSet->GetHealth() <= 0.0f)
 	{
-		// deactivate the weapon
+		// 武器を無効にする
 		if (IsValid(CurrentWeapon))
 		{
 			CurrentWeapon->DeactivateWeapon();
 		}
 
-		// reset the bullet counter UI
-		OnMagazineUpdated.Broadcast(0, 0);
+		// 弾数UIを更新
+		UpdateWeaponHUD(0, 0);
 
-		// destroy this character
+		UpdateHPHUD(0, 0);
+
+		// このキャラクターを破壊する
 		Destroy();
 
 		return 0.f;
@@ -293,7 +306,7 @@ void AGWPlayer::DoStartFiring()
 
 void AGWPlayer::DoStopFiring()
 {
-	// stop firing the current weapon
+	// 現在の武器の発射を停止する
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->StopFiring();
@@ -307,30 +320,30 @@ void AGWPlayer::DoSwitchWeapon()
 		return;
 	}
 
-	// ensure we have at least two weapons two switch between
+	// 少なくとも2つの武器を持っているなら切り替える
 	if (OwnedWeapons.Num() > 1)
 	{
-		// deactivate the old weapon
+		// 古い武器を無効にする
 		CurrentWeapon->DeactivateWeapon();
 
-		// find the index of the current weapon in the owned list
+		// 所有リスト内の現在の武器のインデックスを見つける
 		int32 WeaponIndex = OwnedWeapons.Find(CurrentWeapon);
 
-		// is this the last weapon?
+		// これが最後の武器ですか？
 		if (WeaponIndex == OwnedWeapons.Num() - 1)
 		{
-			// loop back to the beginning of the array
+			// 配列の先頭に戻る
 			WeaponIndex = 0;
 		}
 		else {
-			// select the next weapon index
+			// 次の武器インデックスを選択
 			++WeaponIndex;
 		}
 
-		// set the new weapon as current
+		// 新しい武器を現在の武器として設定する
 		CurrentWeapon = OwnedWeapons[WeaponIndex];
 
-		// activate the new weapon
+		// 新しい武器を起動する
 		CurrentWeapon->ActivateWeapon();
 	}
 }
@@ -349,7 +362,7 @@ void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsReload = false;
 
-	OnMagazineUpdated.Broadcast(CurrentWeapon->GetMagazineSize(), CurrentWeapon->GetBulletCount());
+	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetMagazineSize());
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
@@ -396,7 +409,7 @@ void AGWPlayer::PlayReloadMontage(UAnimMontage* Montage)
 
 void AGWPlayer::AddWeaponRecoil(float Recoil)
 {
-	// apply the recoil as pitch input
+	// 反動をピッチ入力として適用する
 	AddControllerPitchInput(Recoil);
 }
 
@@ -407,7 +420,7 @@ void AGWPlayer::UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize)
 
 FVector AGWPlayer::GetWeaponTargetLocation()
 {
-	// trace ahead from the camera viewpoint
+	// カメラの視点から前方をトレースする
 	FHitResult OutHit;
 
 	const FVector Start = GetFirstPersonCameraComponent()->GetComponentLocation();
@@ -418,18 +431,18 @@ FVector AGWPlayer::GetWeaponTargetLocation()
 
 	GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, QueryParams);
 
-	// return either the impact point or the trace end
+	// インパクトポイントまたはトレースの終了点のいずれかを返す
 	return OutHit.bBlockingHit ? OutHit.ImpactPoint : OutHit.TraceEnd;
 }
 
 void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 {
-	// do we already own this weapon?
+	// すでにこの武器を所有しているか確認
 	AShootingWeapon* OwnedWeapon = FindWeaponOfType(WeaponClass);
 
 	if (!OwnedWeapon)
 	{
-		// spawn the new weapon
+		// 新しい武器を生成
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
 		SpawnParams.Instigator = this;
@@ -440,16 +453,16 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 
 		if (AddedWeapon)
 		{
-			// add the weapon to the owned list
+			// 武器を所持する
 			OwnedWeapons.Add(AddedWeapon);
 
-			// if we have an existing weapon, deactivate it
+			// 既存の武器がある場合無効にする
 			if (CurrentWeapon)
 			{
 				CurrentWeapon->DeactivateWeapon();
 			}
 
-			// switch to the new weapon
+			// 新しい武器に切り替える
 			CurrentWeapon = AddedWeapon;
 			CurrentWeapon->ActivateWeapon();
 		}
@@ -458,10 +471,10 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 
 void AGWPlayer::OnWeaponActivated(AShootingWeapon* Weapon)
 {
-	// update the bullet counter
-	OnMagazineUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
+	// 弾数UIを更新
+	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetMagazineSize());
 
-	// set the character mesh AnimInstances
+	// AnimInstancesをセット
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());
 	GetMesh()->SetAnimInstanceClass(Weapon->GetThirdPersonAnimInstanceClass());
 }
@@ -478,7 +491,7 @@ void AGWPlayer::OnSemiWeaponRefire()
 
 AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const
 {
-	// check each owned weapon
+	// 所有している武器を確認
 	for (AShootingWeapon* Weapon : OwnedWeapons)
 	{
 		if (Weapon->IsA(WeaponClass))
@@ -487,7 +500,12 @@ AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> Weapon
 		}
 	}
 
-	// weapon not found
+	// 武器が見つからない
 	return nullptr;
 
+}
+
+void AGWPlayer::UpdateHPHUD(int32 CurrentHP, int32 MaxHP)
+{
+	OnHPBarUpdated.Broadcast(MaxHP, CurrentHP);
 }

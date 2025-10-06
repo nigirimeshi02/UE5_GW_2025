@@ -28,12 +28,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TSubclassOf<class UBulletCounter> BulletCounterUIClass;
 
+	// HPバーを表示する UI ウィジェットのクラス
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TSubclassOf<class UHPBar> HPBarUIClass;
+
 	// ポーンに付与して「プレイヤー」であることを識別するためのタグ
 	UPROPERTY(EditAnywhere, Category = "Input")
 	FName PlayerPawnTag = FName("Player");
 
 	// 生成された弾数カウンター UI の参照
 	TObjectPtr<class UBulletCounter> BulletCounterUI;
+
+	// 生成された弾数カウンター UI の参照
+	TObjectPtr<class UHPBar> HPBarUI;
 
 protected:
 
@@ -53,5 +60,9 @@ protected:
 	// 所持ポーンの弾数が更新されたときに呼ばれる処理
 	UFUNCTION()
 	void OnBulletCountUpdated(int32 MagazineSize, int32 Bullets);
+
+	// 所持ポーンのHPが更新されたときに呼ばれる関数
+	UFUNCTION()
+	void OnHPBarUpdated(float MaxHP, float CurrentHP);
 
 };

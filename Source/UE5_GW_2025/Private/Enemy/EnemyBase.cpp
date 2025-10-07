@@ -150,6 +150,9 @@ void AEnemyBase::Die()
         MeshComp->bBlendPhysics = true;                       // アニメーションから物理へ自然に移行
     }
 
+    // 死亡イベントを通知(EnemyManagerに通知)
+    OnEnemyDied.Broadcast();
+
     // 一定時間後に消滅
     SetLifeSpan(10.0f);
 }

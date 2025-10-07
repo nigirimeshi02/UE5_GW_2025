@@ -63,42 +63,52 @@ void AEnemyFlying::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    if (!StateMachine || (StateMachine->GetCurrentState() != EEnemyState::Chase 
-                            && StateMachine->GetCurrentState() != EEnemyState::Attack))
-        return;
+    //if (!StateMachine || (StateMachine->GetCurrentState() != EEnemyState::Chase 
+    //                        && StateMachine->GetCurrentState() != EEnemyState::Attack))
+    //    return;
 
     AActor* Target = StateMachine->GetTarget();
-    if (!Target) return;
-
     FVector CurrentLocation = GetActorLocation();
-    FVector TargetLocation = Target->GetActorLocation();
     FVector NewLocation = CurrentLocation; // 最終的な位置をここに組み立てていく
+    if (Target) {
 
-    // --- 常にホバリングする（Z補間 + サイン波揺れ） ---
-    float TargetZ = TargetLocation.Z + HoverHeight;
-    float SmoothedZ = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 2.0f);
+        
+        FVector TargetLocation = Target->GetActorLocation();
+        
 
-    float Time = GetWorld()->GetTimeSeconds();
-    float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
+        // --- 常にホバリングする（Z補間 + サイン波揺れ） ---
+        float TargetZ = TargetLocation.Z + HoverHeight;
+        float SmoothedZ = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 2.0f);
 
-    NewLocation.Z = SmoothedZ + HoverOffset;
+        float Time = GetWorld()->GetTimeSeconds();
+        float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
 
-    // --- 一定距離以上なら水平方向の移動・回転も行う ---
-    FVector ToTarget = TargetLocation - CurrentLocation;
-    if (ToTarget.Length() >= AcceptanceRadius)
-    {
-        // 水平移動
-        FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z) - CurrentLocation;
-        FVector HorizontalDirection = HorizontalToTarget.GetSafeNormal();
+        NewLocation.Z = SmoothedZ + HoverOffset;
 
-        NewLocation += HorizontalDirection * FlySpeed * DeltaTime;
-
-        // 回転も進行方向に
-        if (!HorizontalDirection.IsNearlyZero())
+        // --- 一定距離以上なら水平方向の移動・回転も行う ---
+        FVector ToTarget = TargetLocation - CurrentLocation;
+        if (/*ToTarget.Length() >= AcceptanceRadius*/true)
         {
-            FRotator NewRotation = HorizontalDirection.Rotation();
-            SetActorRotation(NewRotation);
+            // 水平移動
+            FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z) - CurrentLocation;
+            FVector HorizontalDirection = HorizontalToTarget.GetSafeNormal();
+
+            NewLocation += HorizontalDirection * FlySpeed * DeltaTime;
+
+            // 回転も進行方向に
+            if (!HorizontalDirection.IsNearlyZero())
+            {
+                FRotator NewRotation = HorizontalDirection.Rotation();
+                SetActorRotation(NewRotation);
+            }
         }
+    }
+    else
+    {
+        // ターゲットがいない場合はホバリングのみ維持
+        float Time = GetWorld()->GetTimeSeconds();
+        float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
+		NewLocation.Z = CurrentLocation.Z + HoverOffset;
     }
 
     SetActorLocation(NewLocation);

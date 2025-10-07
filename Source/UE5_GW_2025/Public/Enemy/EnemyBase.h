@@ -9,6 +9,8 @@
 class UEnemyStateMachineComponent;
 class UEnemyWeaponComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
+
 UCLASS()
 class UE5_GW_2025_API AEnemyBase : public ACharacter
 {
@@ -69,5 +71,9 @@ public:
 
     // €–Sˆ—
     virtual void Die();
+
+	// “G‚ª€–S‚ÌƒCƒxƒ“ƒg
+    UPROPERTY(BlueprintAssignable, Category = "Enemy")
+    FOnEnemyDied OnEnemyDied;
 
 };

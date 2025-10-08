@@ -24,13 +24,6 @@ class UE5_GW_2025_API UPlayerAttributeSet : public UAttributeSet
 	GENERATED_BODY()
 	
 public:
-
-	// コンストラクタ
-	UPlayerAttributeSet();
-
-	// GameplayEffect動作後の処理
-	void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)override;
-
 	//体力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayAttributeData Health;
@@ -95,4 +88,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayAttributeData UltimateSkillCoolTime;
 	ATTRIBUTE_ACCESSORS(UPlayerAttributeSet, UltimateSkillCoolTime)
+
+public:
+	// コンストラクタ
+	UPlayerAttributeSet();
+
+	// GameplayEffect動作後の処理
+	void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)override;
+
+	// 初期化処理
+	void Initialize();
 };

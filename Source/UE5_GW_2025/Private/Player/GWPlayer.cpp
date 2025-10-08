@@ -20,6 +20,8 @@
 #include "Player/GWPlayerController.h"
 #include "Abilities/PlayerAttributeSet.h"
 #include "Engine/DamageEvents.h"
+#include "Game/GWGameMode.h"
+#include "Kismet/GameplayStatics.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -168,7 +170,7 @@ void AGWPlayer::InitializeAbilities()
 
 	TArray<FAbilityInfo> AbilityList = 
 	{
-
+		 //{ TEXT("/Game/Abilities/GA_Dash"),   1, 0 },
 	};
 
 	// それぞれのアビリティを登録
@@ -234,8 +236,25 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 		UpdateHPHUD(0, 0);
 
-		// このキャラクターを破壊する
-		Destroy();
+		AGWGameMode* GWGM = Cast<AGWGameMode>(UGameplayStatics::GetGameMode(this));
+
+		if (GWGM)
+		{
+			// 残機を減らす
+			GWGM->DecreaseLife();
+
+			// 残機があるなら処理をする
+			if (GWGM->PlayerLife > 0)
+			{
+				AttributeSet->Initialize();
+
+				UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+
+				// このキャラクターを破壊する
+				Destroy();
+			}
+
+		}
 
 		return 0.f;
 	}

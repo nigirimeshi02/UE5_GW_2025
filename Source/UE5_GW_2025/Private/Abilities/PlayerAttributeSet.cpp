@@ -47,3 +47,20 @@ void UPlayerAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 		}
 	}
 }
+
+void UPlayerAttributeSet::Initialize()
+{
+	Health = 300.f;
+	MaxHealth = 300.f;
+	Stamina = 100.f;
+	MaxStamina = 100.f;
+	Energy = 100.f;
+	MaxEnergy = 100.f;
+	AttackPower = 100.f;
+	DefensePower = 100.f;
+	CriticalRate = 5.f;
+	CriticalDamage = 150.f;
+	AttackSpeed = 1.0f;
+	SkillCoolTime = 5.0f;
+	UltimateSkillCoolTime = 30.0f;
+}

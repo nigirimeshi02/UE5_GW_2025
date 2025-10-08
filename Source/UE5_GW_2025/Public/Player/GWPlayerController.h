@@ -39,7 +39,7 @@ protected:
 	// 生成された弾数カウンター UI の参照
 	TObjectPtr<class UBulletCounter> BulletCounterUI;
 
-	// 生成された弾数カウンター UI の参照
+	// 生成されたHPバー UI の参照
 	TObjectPtr<class UHPBar> HPBarUI;
 
 protected:

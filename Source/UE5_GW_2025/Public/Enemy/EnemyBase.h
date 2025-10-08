@@ -8,6 +8,7 @@
 
 class UEnemyStateMachineComponent;
 class UEnemyWeaponComponent;
+class USphereComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
 
@@ -37,6 +38,22 @@ protected:
 	// 現在の体力
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Stats")
     float CurrentHealth;
+
+    // --- 弱点コリジョン ---
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "WeakPoint")
+    USphereComponent* WeakPointSphere;
+
+    // --- 弱点ヒット時の倍率 ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeakPoint")
+    float WeakPointDamageMultiplier = 2.0f;
+
+    // --- 弱点ヒット判定半径（自動設定されますが変更可能） ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeakPoint")
+    float WeakPointRadius = 50.0f;
+
+    // どのボーンにアタッチするか（例："head"）
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeakPoint")
+    FName WeakPointBoneName = "head";
 
 public:
     virtual void Tick(float DeltaTime) override;

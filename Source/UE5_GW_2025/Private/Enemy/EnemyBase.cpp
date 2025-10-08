@@ -8,6 +8,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 
+#include "Components/SphereComponent.h"
+#include "GameFramework/DamageType.h"
+#include "Engine/DamageEvents.h"
 AEnemyBase::AEnemyBase()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -22,6 +25,18 @@ AEnemyBase::AEnemyBase()
 	// キャラクターの体力の初期化
     PrimaryActorTick.bCanEverTick = true;
     CurrentHealth = MaxHealth; // 初期体力
+
+    // --- 弱点コリジョンを作成 ---
+    WeakPointSphere = CreateDefaultSubobject<USphereComponent>(TEXT("WeakPointSphere"));
+    WeakPointSphere->SetupAttachment(GetRootComponent());
+    WeakPointSphere->InitSphereRadius(WeakPointRadius);
+    //WeakPointSphere->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f)); // 頭のあたりに配置
+    
+    // Mesh（キャラクターのスケルタルメッシュ）にアタッチ
+    WeakPointSphere->SetupAttachment(GetMesh());
+
+    WeakPointSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 当たり判定は使わない
+    WeakPointSphere->SetHiddenInGame(false); // デバッグ時に可視化したい場合は false
 }
 
 void AEnemyBase::BeginPlay()
@@ -37,6 +52,13 @@ void AEnemyBase::BeginPlay()
 			EnemyAI->SetAcceptanceRadius(AcceptanceRadius);
             UE_LOG(LogTemp, Log, TEXT("SetAcceptanceRadius"));
         }
+    }
+
+    // --- ボーンにアタッチ ---
+    if (GetMesh() && WeakPointBoneName != NAME_None)
+    {
+        WeakPointSphere->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeakPointBoneName);
+        UE_LOG(LogTemp, Warning, TEXT("WeakPoint attached to bone: %s"), *WeakPointBoneName.ToString());
     }
 }
 
@@ -105,18 +127,63 @@ EEnemyState AEnemyBase::GetCurrentState() const
     return StateMachine->GetCurrentState(); // 状態取得
 }
 
+//float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+//{
+//    if (CurrentHealth <= 0.0f)
+//    {
+//        return 0.0f; // すでに死亡している場合は無視
+//    }
+//
+//    // ダメージ適用
+//    CurrentHealth -= DamageAmount;
+//    UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage. CurrentHealth: %f"), DamageAmount, CurrentHealth);
+//
+//    // 死亡チェック
+//    if (CurrentHealth <= 0.0f)
+//    {
+//        Die();
+//    }
+//
+//    return DamageAmount;
+//}
+
 float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
     if (CurrentHealth <= 0.0f)
     {
-        return 0.0f; // すでに死亡している場合は無視
+        return 0.0f;
     }
 
-    // ダメージ適用
+    FVector HitLocation = GetActorLocation();
+
+    // --- DamageEvent からヒット位置を取得 ---
+    if (DamageEvent.GetTypeID() == FPointDamageEvent::ClassID)
+    {
+        const FPointDamageEvent* PointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+        HitLocation = PointEvent->HitInfo.ImpactPoint;
+    }
+    else if (DamageEvent.GetTypeID() == FRadialDamageEvent::ClassID)
+    {
+        const FRadialDamageEvent* RadialEvent = static_cast<const FRadialDamageEvent*>(&DamageEvent);
+        HitLocation = RadialEvent->Origin;
+    }
+
+    // --- 弱点のワールド座標を取得 ---
+    FVector WeakPointWorld = WeakPointSphere->GetComponentLocation();
+
+    // --- 弱点との距離を計算 ---
+    float Distance = FVector::Dist(HitLocation, WeakPointWorld);
+
+    if (Distance <= WeakPointSphere->GetScaledSphereRadius())
+    {
+        DamageAmount *= WeakPointDamageMultiplier;
+        UE_LOG(LogTemp, Warning, TEXT("Weak Point Hit! Damage boosted to %f"), DamageAmount);
+    }
+
+    // --- ダメージを適用 ---
     CurrentHealth -= DamageAmount;
     UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage. CurrentHealth: %f"), DamageAmount, CurrentHealth);
 
-    // 死亡チェック
     if (CurrentHealth <= 0.0f)
     {
         Die();
@@ -124,6 +191,7 @@ float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 
     return DamageAmount;
 }
+
 
 void AEnemyBase::Die()
 {

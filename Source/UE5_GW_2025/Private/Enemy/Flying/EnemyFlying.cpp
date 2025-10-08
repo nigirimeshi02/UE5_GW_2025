@@ -87,7 +87,7 @@ void AEnemyFlying::Tick(float DeltaTime)
 
         // --- ˆê’è‹——£ˆÈã‚È‚ç…•½•ûŒü‚ÌˆÚ“®E‰ñ“]‚às‚¤ ---
         FVector ToTarget = TargetLocation - CurrentLocation;
-        if (/*ToTarget.Length() >= AcceptanceRadius*/true)
+        if (ToTarget.Length() >= AcceptanceRadius)
         {
             // …•½ˆÚ“®
             FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z) - CurrentLocation;

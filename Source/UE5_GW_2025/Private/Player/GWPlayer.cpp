@@ -236,18 +236,24 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 		UpdateHPHUD(0, 0);
 
-		// このキャラクターを破壊する
-		Destroy();
-
 		AGWGameMode* GWGM = Cast<AGWGameMode>(UGameplayStatics::GetGameMode(this));
 
 		if (GWGM)
 		{
-			AttributeSet->Initialize();
-
-			UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
-
+			// 残機を減らす
 			GWGM->DecreaseLife();
+
+			// 残機があるなら処理をする
+			if (GWGM->PlayerLife > 0)
+			{
+				AttributeSet->Initialize();
+
+				UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+
+				// このキャラクターを破壊する
+				Destroy();
+			}
+
 		}
 
 		return 0.f;

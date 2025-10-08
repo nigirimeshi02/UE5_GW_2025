@@ -2,6 +2,7 @@
 
 
 #include "Game/GWGameMode.h"
+#include "Kismet/GameplayStatics.h"
 
 AGWGameMode::AGWGameMode()
 {
@@ -16,4 +17,9 @@ void AGWGameMode::DecreaseLife()
 	{
 		OnGameOver();
 	}
+}
+
+void AGWGameMode::OnGameOver()
+{
+	UGameplayStatics::OpenLevel(this, TEXT("LVL_GameOver"));
 }

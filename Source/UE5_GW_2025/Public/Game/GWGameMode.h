@@ -27,8 +27,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Game Rule")
 	void DecreaseLife();
 
-	// ゲームオーバー処理
-	UFUNCTION(BlueprintImplementableEvent, Category = "Game Rule")
+	// ゲームオーバーのときに呼ばれる関数
+	UFUNCTION(BlueprintCallable, Category = "Game Rule")
 	void OnGameOver();
 
 };

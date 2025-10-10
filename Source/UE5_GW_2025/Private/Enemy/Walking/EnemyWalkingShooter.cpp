@@ -68,7 +68,7 @@ void AEnemyWalkingShooter::Tick(float DeltaTime)
     // UŒ‚”ÍˆÍ‚É“ü‚Á‚½‚ç Attack ó‘Ô‚É
     if (Distance <= FireRange)
     {
-        if (StateMachine->GetCurrentState() != EEnemyState::Attack)
+        if (StateMachine->GetCurrentState() != EEnemyState::Attack && StateMachine->GetCurrentState() != EEnemyState::Dead)
         {
             StateMachine->ChangeState(EEnemyState::Attack);
         }

@@ -34,7 +34,7 @@ protected:
     float AcceptanceRadius = 100.0f; // デフォルト値
     // 敵の体力
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enemy|Stats")
-    float MaxHealth = 100.0f;
+    float MaxHealth = 250.0f;
 	// 現在の体力
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|Stats")
     float CurrentHealth;

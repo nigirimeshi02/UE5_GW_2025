@@ -25,7 +25,7 @@ void AEnemyFlyingShooter::Tick(float DeltaTime)
 
     if (Dist <= FireRange)
     {
-        if (StateMachine->GetCurrentState() != EEnemyState::Attack)
+        if (StateMachine->GetCurrentState() != EEnemyState::Attack && StateMachine->GetCurrentState() != EEnemyState::Dead)
             StateMachine->ChangeState(EEnemyState::Attack);
     }
     else

@@ -81,7 +81,11 @@ void AEnemyBase::OnPlayerSpotted(APawn* PlayerPawn)
     }
 
     StateMachine->SetTarget(PlayerPawn);
-    StateMachine->ChangeState(EEnemyState::Chase);
+	// ó‘Ô‘JˆÚF’ÇÕ@€‚ñ‚Å‚È‚¯‚ê‚Î
+    if (StateMachine->GetCurrentState() != EEnemyState::Dead)
+    {
+        StateMachine->ChangeState(EEnemyState::Chase);
+    }
 }
 
 void AEnemyBase::OnPlayerLost()
@@ -109,7 +113,7 @@ void AEnemyBase::OnPlayerLost()
 
 void AEnemyBase::AttackTarget()
 {
-    WeaponComponent->PerformAttack();
+	if (StateMachine->GetCurrentState() != EEnemyState::Dead) WeaponComponent->PerformAttack();
 }
 
 void AEnemyBase::MoveToTarget(APawn* Target)
@@ -196,6 +200,8 @@ float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
 void AEnemyBase::Die()
 {
     UE_LOG(LogTemp, Warning, TEXT("Enemy has died."));
+
+    StateMachine->ChangeState(EEnemyState::Dead);
 
     // AI‚Ì§Œä‚ğŠO‚·
     AController* AIController = GetController();

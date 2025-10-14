@@ -27,6 +27,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Enemy")
 	int32 RemainingEnemies = 0;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> ClearWidgetClass;
+
 	UFUNCTION()
 	void OnEnemyDied();
 

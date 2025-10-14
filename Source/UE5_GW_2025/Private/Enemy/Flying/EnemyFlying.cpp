@@ -111,7 +111,7 @@ void AEnemyFlying::Tick(float DeltaTime)
 		NewLocation.Z = CurrentLocation.Z + HoverOffset;
     }
 
-    SetActorLocation(NewLocation);
+    SetActorLocation(NewLocation, true);
 }
 
 void AEnemyFlying::OnPlayerLost()

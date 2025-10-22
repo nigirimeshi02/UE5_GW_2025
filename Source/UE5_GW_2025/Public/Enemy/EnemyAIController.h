@@ -52,6 +52,8 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetAcceptanceRadius(float NewAcceptanceRadius);
 
+    void SetSightRadius(float NewRadius);
+
 private:
     APawn* TargetPawn;
 };

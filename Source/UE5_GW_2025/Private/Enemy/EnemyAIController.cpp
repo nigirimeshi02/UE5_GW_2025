@@ -1,6 +1,7 @@
 #include "Enemy/EnemyAIController.h"
 #include "Enemy/EnemyBase.h"
 #include "Enemy/Flying/EnemyFlying.h"
+#include "Enemy/Walking/EnemyWalkingShooterSniper.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
@@ -45,7 +46,7 @@ void AEnemyAIController::Tick(float DeltaTime)
     if (TargetPawn && ControlledPawn)
     {
         // 飛行タイプなら MoveToActor を使わない
-        if (ControlledPawn->IsA(AEnemyFlying::StaticClass()))
+        if (ControlledPawn->IsA(AEnemyFlying::StaticClass()) || ControlledPawn->IsA(AEnemyWalkingShooterSniper::StaticClass()))
         {
             // 飛行キャラは自前で動く → AIControllerは移動指示しない
             //return;
@@ -130,8 +131,12 @@ void AEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFoll
 
 void AEnemyAIController::MoveToLastKnownLocation()
 {
-    UE_LOG(LogTemp, Log, TEXT("MoveToLastKnownLocation: x%f y%f z%f"), LastKnownPlayerLocation.X, LastKnownPlayerLocation.Y, LastKnownPlayerLocation.Z);
-    MoveToLocation(LastKnownPlayerLocation, 10.0f); // 10cm以内で停止
+    APawn* ControlledPawn = GetPawn();
+    if (!(ControlledPawn->IsA(AEnemyFlying::StaticClass()) || ControlledPawn->IsA(AEnemyWalkingShooterSniper::StaticClass())))
+    {
+        UE_LOG(LogTemp, Log, TEXT("MoveToLastKnownLocation: x%f y%f z%f"), LastKnownPlayerLocation.X, LastKnownPlayerLocation.Y, LastKnownPlayerLocation.Z);
+        MoveToLocation(LastKnownPlayerLocation, 10.0f); // 10cm以内で停止
+    }
 }
 
 void AEnemyAIController::SetTarget(APawn* NewTarget)
@@ -142,4 +147,14 @@ void AEnemyAIController::SetTarget(APawn* NewTarget)
 void AEnemyAIController::SetAcceptanceRadius(float NewAcceptanceRadius)
 {
     AcceptanceRadius = NewAcceptanceRadius;
+}
+
+void AEnemyAIController::SetSightRadius(float NewRadius)
+{
+    if (SightConfig)
+    {
+        SightConfig->SightRadius = NewRadius;
+        SightConfig->LoseSightRadius = NewRadius + 500.f; // 適当なバッファ
+        MyPerceptionComponent->RequestStimuliListenerUpdate();
+	}
 }

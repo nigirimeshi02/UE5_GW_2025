@@ -62,12 +62,12 @@ void AEnemyManager::CheckAllEnemiesDefeated()
 		}
 
 		// 3•bŒã‚ÉƒŒƒxƒ‹‘JˆÚ
-		FTimerHandle TimerHandle;
+		/*FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, [this]()
 			{
 				FName NextLevelName = FName("NextLevelName");
 				UGameplayStatics::OpenLevel(GetWorld(), NextLevelName);
-			}, 3.0f, false);
+			}, 3.0f, false);*/
 	}
 }
 

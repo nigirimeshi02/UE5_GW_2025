@@ -19,7 +19,7 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     // UŒ‚ˆ—
-    void TryShootAtPlayer();
+    virtual void TryShootAtPlayer();
 
 	void StartFireCycle();
 
@@ -44,7 +44,7 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     TSubclassOf<AActor> BulletClass;
 
-private:
+
     FTimerHandle FireTimerHandle;
 
     FTimerHandle FireCycleTimerHandle;   // UŒ‚ƒTƒCƒNƒ‹i3”­Œ‚‚Á‚Ä1•b‹x‚Şj

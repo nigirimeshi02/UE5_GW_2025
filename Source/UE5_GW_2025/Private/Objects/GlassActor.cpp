@@ -40,11 +40,11 @@ void AGlassActor::Tick(float DeltaTime)
             {
                 GlassCollection->SetMaterial(i, BrokenGlassMaterial);
             }
-            UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Material Changed!"));
+            //UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Material Changed!"));
         }
         else 
         {
-            UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Not Changed!"));
+            //UE_LOG(LogTemp, Warning, TEXT("Glass Broken: Not Changed!"));
         }
     }
 }

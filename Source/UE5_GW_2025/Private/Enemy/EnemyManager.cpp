@@ -4,6 +4,8 @@
 #include "Enemy/EnemyManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Enemy/EnemyBase.h"
+#include "TimerManager.h"
+#include "Blueprint/UserWidget.h"
 
 // Sets default values
 AEnemyManager::AEnemyManager()
@@ -50,10 +52,22 @@ void AEnemyManager::CheckAllEnemiesDefeated()
 {
 	if (RemainingEnemies <= 0)
 	{
-		// 次のレベル名（レベル名はプロジェクトに合わせて変更）
-		FName NextLevelName = FName("NextLevelName");
+		if (ClearWidgetClass)
+		{
+			UUserWidget* ClearWidget = CreateWidget<UUserWidget>(GetWorld(), ClearWidgetClass);
+			if (ClearWidget)
+			{
+				ClearWidget->AddToViewport();
+			}
+		}
 
-		UGameplayStatics::OpenLevel(GetWorld(), NextLevelName);
+		// 3秒後にレベル遷移
+		/*FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+			{
+				FName NextLevelName = FName("NextLevelName");
+				UGameplayStatics::OpenLevel(GetWorld(), NextLevelName);
+			}, 3.0f, false);*/
 	}
 }
 

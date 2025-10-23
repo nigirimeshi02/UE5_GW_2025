@@ -23,6 +23,8 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     // ステートマシンコンポーネント
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
     TObjectPtr<UEnemyStateMachineComponent> StateMachine;
@@ -54,6 +56,20 @@ protected:
     // どのボーンにアタッチするか（例："head"）
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeakPoint")
     FName WeakPointBoneName = "head";
+
+    /**
+     * ダメージを受けたときに表示するウィジェットのブループリントクラス
+     * 例: ダメージ数値、ヒットインジケーターなど
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> DamageWidgetClass;
+
+    /**
+     * ウィジェットが表示される時間（秒）
+     * この時間が経過するとウィジェットは自動的に削除されます
+     */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+    float WidgetDisplayDuration = 0.1f;
 
 public:
     virtual void Tick(float DeltaTime) override;

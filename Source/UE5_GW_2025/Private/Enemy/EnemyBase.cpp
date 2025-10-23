@@ -11,6 +11,8 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/DamageType.h"
 #include "Engine/DamageEvents.h"
+#include "Blueprint/UserWidget.h"
+
 AEnemyBase::AEnemyBase()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -43,6 +45,8 @@ void AEnemyBase::BeginPlay()
 {
     Super::BeginPlay();
 
+    CurrentHealth = MaxHealth; // 初期体力
+
     // プレイヤーを発見したときの処理
     if (AAIController* AIController = Cast<AAIController>(GetController()))
     {
@@ -59,6 +63,21 @@ void AEnemyBase::BeginPlay()
     {
         WeakPointSphere->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeakPointBoneName);
         UE_LOG(LogTemp, Warning, TEXT("WeakPoint attached to bone: %s"), *WeakPointBoneName.ToString());
+    }
+}
+
+void AEnemyBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    UE_LOG(LogTemp, Log, TEXT("Enemy End"));
+
+    // アクターに関連するタイマーを全てクリア
+    // SetTimerで使用した特定のFTimerHandleをクリアするのが理想ですが、
+    // ここではアクターが設定したタイマーすべてをクリアできます。
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearAllTimersForObject(this);
     }
 }
 
@@ -131,26 +150,6 @@ EEnemyState AEnemyBase::GetCurrentState() const
     return StateMachine->GetCurrentState(); // 状態取得
 }
 
-//float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-//{
-//    if (CurrentHealth <= 0.0f)
-//    {
-//        return 0.0f; // すでに死亡している場合は無視
-//    }
-//
-//    // ダメージ適用
-//    CurrentHealth -= DamageAmount;
-//    UE_LOG(LogTemp, Warning, TEXT("Enemy took %f damage. CurrentHealth: %f"), DamageAmount, CurrentHealth);
-//
-//    // 死亡チェック
-//    if (CurrentHealth <= 0.0f)
-//    {
-//        Die();
-//    }
-//
-//    return DamageAmount;
-//}
-
 float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
     if (CurrentHealth <= 0.0f)
@@ -191,6 +190,43 @@ float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
     if (CurrentHealth <= 0.0f)
     {
         Die();
+    }
+
+    if (DamageWidgetClass != nullptr)
+    {
+        // 1. ウィジェットの生成
+        UUserWidget* DamageWidget = CreateWidget<UUserWidget>(GetWorld(), DamageWidgetClass);
+
+        if (DamageWidget)
+        {
+            // 2. ウィジェットをビューポートに追加
+            // ワールド空間に表示したい場合は、代わりにUWidgetComponentを使用するか、
+            // GetWorld()->GetFirstPlayerController()->ProjectWorldLocationToScreenなどで工夫が必要です。
+            // ここでは簡易的に画面に表示（HUD要素として）します。
+            DamageWidget->AddToViewport();
+
+            // ※補足：ダメージ量をウィジェットに渡したい場合
+            // DamageWidgetが特定のカスタムクラス（例：UDamageDisplayWidget）の場合、
+            // キャストして関数を呼び出すことで値を渡せます。
+            // UDamageDisplayWidget* CustomWidget = Cast<UDamageDisplayWidget>(DamageWidget);
+            // if (CustomWidget) { CustomWidget->SetDamageText(DamageTaken); }
+
+
+            // 3. 一定時間後にウィジェットを削除するためのタイマーを設定
+            FTimerHandle TimerHandle;
+            GetWorldTimerManager().SetTimer(
+                TimerHandle,
+                [DamageWidget]() // ラムダ関数でウィジェットをキャプチャ
+                {
+                    if (DamageWidget && DamageWidget->IsInViewport())
+                    {
+                        DamageWidget->RemoveFromParent();
+                    }
+                },
+                WidgetDisplayDuration, // 設定した表示時間
+                false // ループさせない
+            );
+        }
     }
 
     return DamageAmount;

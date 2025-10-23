@@ -108,12 +108,9 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
 
     FRotator SpreadRotation = LookAt + FRotator(PitchOffset, YawOffset, 0.f);
 
-    //SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-
     // ’e‚ð”­ŽË
     if (BulletClass)
     {
-        //FVector MuzzleLocation = GetActorLocation() + GetActorForwardVector() * 100.f + FVector(-20.f, 0, 50.f);
         FActorSpawnParameters SpawnParams;
         GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
 

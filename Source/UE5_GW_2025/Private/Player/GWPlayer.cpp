@@ -22,6 +22,7 @@
 #include "Engine/DamageEvents.h"
 #include "Game/GWGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 AGWPlayer::AGWPlayer()
 {
@@ -76,26 +77,54 @@ AGWPlayer::AGWPlayer()
 	// IA_Reloadを読み込む
 	ReloadAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Reload"));
 
+	ClimbDuration = 0.15f;
+
+	LookAtInterpSpeed = 10.0f; // 壁方向へ向く速さ
+
 	IsReload = false;
+	IsClimbing = false;
+	CanClimb = false;
 }
 
 void AGWPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
-
-	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
-
-	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
-
-	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 }
 
 void AGWPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (IsClimbing)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC)
+		{
+			// 視線を壁方向に補間
+			FRotator CurrentRot = PC->GetControlRotation();
+			FRotator NewRot = FMath::RInterpTo(CurrentRot, TargetRotation, DeltaTime, LookAtInterpSpeed);
+			PC->SetControlRotation(NewRot);
+		}
+	}
+	else
+	{
+		FVector Start = GetActorLocation();
+		FVector Forward = GetActorForwardVector();
+		FVector End = Start + Forward * 50.0f; // 前方50cmにRaycast
+
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this); // 自分自身は無視
+
+		// Trace にて ECC_GameTraceChannel3 (Climbable) を使用
+		bool bHit = GetWorld()->LineTraceSingleByChannel(
+			ClimbTraceHit, Start, End, ECC_GameTraceChannel3, Params
+		);
+
+		// デバッグ表示（赤い線でトレース確認）
+		DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
+
+		CanClimb = bHit;
+	}
 }
 
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -108,6 +137,9 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		// ジャンプ
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AGWPlayer::DoJumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AGWPlayer::DoJumpEnd);
+
+		// 壁のぼり
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Ongoing, this, &AGWPlayer::TryStartClimb);
 
 		// 移動
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGWPlayer::MoveInput);
@@ -130,6 +162,14 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AGWPlayer::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
+
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+
+	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 
 	// プレイヤーステートを取得し、そこから ASC を取得
 	AGWPlayerState* PS = GetPlayerState<AGWPlayerState>();
@@ -282,7 +322,7 @@ void AGWPlayer::LookInput(const FInputActionValue& Value)
 
 void AGWPlayer::DoAim(float Yaw, float Pitch)
 {
-	if (GetController())
+	if (GetController() && !IsClimbing)
 	{
 		// 回転入力を渡す
 		AddControllerYawInput(Yaw);
@@ -380,6 +420,100 @@ void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 	IsReload = false;
 
 	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetMagazineSize());
+}
+
+void AGWPlayer::TryStartClimb()
+{
+	if (IsClimbing) return;
+
+	FHitResult Hit;
+	if (CheckClimb(Hit))
+	{
+		DoStartClimb(Hit);
+	}
+}
+
+void AGWPlayer::DoStartClimb(const FHitResult& Hit)
+{
+	IsClimbing = true;
+
+	// キャラクター移動を止める
+	GetCharacterMovement()->DisableMovement();
+
+	FVector WallNormal = Hit.Normal;
+	FVector ClimbStartLocation = GetCapsuleComponent()->GetComponentLocation();
+
+	// 壁の上端を仮定（Apex風：上方向へ100cm＋前方へ15cm）
+	FVector UpOffset = FVector::UpVector * 100.0f;
+	FVector ForwardOffset = -WallNormal * 15.0f;
+	FVector ClimbEndLocation = ClimbStartLocation + UpOffset + ForwardOffset;
+
+	// 壁方向を向かせる
+	FRotator NewRot = WallNormal.ToOrientationRotator();
+	NewRot.Yaw += 180.f;
+	SetActorRotation(NewRot);
+
+	// 壁方向へ向くべき回転を保存
+	TargetRotation = WallNormal.ToOrientationRotator();
+	TargetRotation.Yaw += 180.0f;
+
+	// モーション再生
+	if (ClimbMontage)
+	{
+		PlayAnimMontage(ClimbMontage);
+	}
+	// スムーズに上へ移動
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+
+	UKismetSystemLibrary::MoveComponentTo(
+		GetCapsuleComponent(),
+		ClimbEndLocation,
+		GetActorRotation(),
+		false,  // bEaseOut
+		false,  // bEaseIn
+		ClimbDuration,
+		false, // bForceShortestRotation
+		EMoveComponentAction::Move,
+		LatentInfo
+	);
+
+	// 移動完了後に呼ぶ
+	GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this]() { DoEndClimb(); });
+		});
+}
+
+void AGWPlayer::DoEndClimb()
+{
+	if (!IsClimbing)
+		return;
+
+	IsClimbing = false;
+
+	// 移動再有効化
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+}
+
+bool AGWPlayer::CheckClimb(FHitResult& OutHit)
+{
+	FVector Start = GetActorLocation();
+	FVector Forward = GetActorForwardVector();
+	FVector End = Start + Forward * 50.0f; // 前方50cmにRaycast
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this); // 自分自身は無視
+
+	// Trace にて ECC_GameTraceChannel3 (Climbable) を使用
+	bool Hit = GetWorld()->LineTraceSingleByChannel(
+		OutHit, Start, End, ECC_GameTraceChannel3, Params
+	);
+
+	// デバッグ表示（赤い線でトレース確認）
+	DrawDebugLine(GetWorld(), Start, End, Hit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
+
+	return Hit;
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)

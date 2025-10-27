@@ -8,6 +8,8 @@
 #include "Player/GWPlayer.h"
 #include "UI/BulletCounter.h"
 #include "UI/HPBar.h"
+#include "Abilities/PlayerAttributeSet.h"
+#include "Player/GWPlayerState.h"
 
 void AGWPlayerController::BeginPlay()
 {

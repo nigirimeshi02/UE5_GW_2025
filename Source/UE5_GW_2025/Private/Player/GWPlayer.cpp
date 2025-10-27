@@ -89,6 +89,22 @@ AGWPlayer::AGWPlayer()
 void AGWPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
+
+	if (GWPC)
+	{
+		AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+		if (GWPS)
+		{
+			UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+
+			UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+		}
+
+	}
+
 }
 
 void AGWPlayer::Tick(float DeltaTime)
@@ -162,14 +178,6 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AGWPlayer::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
-	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
-
-	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
-
-	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
-
-	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 
 	// プレイヤーステートを取得し、そこから ASC を取得
 	AGWPlayerState* PS = GetPlayerState<AGWPlayerState>();

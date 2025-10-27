@@ -66,6 +66,7 @@ void AEnemyWalkingShooterSniper::BeginPlay()
 void AEnemyWalkingShooterSniper::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UE_LOG(LogTemp, Log, TEXT("Sniper initialized: Range=%f, FireCycle=%f"), FireRange, FireCycleInterval);
 	// エイム予測レーザービームの表示更新
 	if (StateMachine->GetCurrentState() == EEnemyState::Attack)
 	{
@@ -106,7 +107,22 @@ void AEnemyWalkingShooterSniper::TryShootAtPlayer()
 		FActorSpawnParameters SpawnParams;
 		GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
 		UE_LOG(LogTemp, Log, TEXT("EnemySniper: Fired!"));
+
+		// 発射後にレーザーを非表示にし、タイマーを開始
+		bCanShowLaser = false;
+		GetWorldTimerManager().SetTimer(
+			TH_LaserCooldown,
+			this,
+			&AEnemyWalkingShooterSniper::AllowLaserDisplay,
+			LaserHideDuration, // 1.0f (LaserHideDuration) 秒後に呼び出す
+			false // ループしない
+		);
 	}
+}
+
+void AEnemyWalkingShooterSniper::AllowLaserDisplay()
+{
+	bCanShowLaser = true;
 }
 
 void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
@@ -143,11 +159,6 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 		LookAt = NewRotation;
 	}
 
-
-
-	//FRotator LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
-	
-
 	// 予測線はブレさせず、クリーンな中心線を出すことが多い
 	// ここではシンプルにターゲット方向を使用します。
 	FRotator AimRotation = LookAt;
@@ -164,6 +175,9 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 	// ビームの終了位置 (Target)
 	FVector EndLocation = StartLocation + Direction * FireRange;
 
-	LineDrawer->DrawPermanentLine(StartLocation, EndLocation, FLinearColor::Red, 5.f);
+	if (bCanShowLaser) 
+	{
+		LineDrawer->DrawPermanentLine(StartLocation, EndLocation, FLinearColor::Red, 5.f);
+	}
 }
 

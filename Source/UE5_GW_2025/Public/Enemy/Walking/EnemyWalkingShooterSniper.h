@@ -52,6 +52,20 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
 	float SniperFireCycleInterval = 5.0f; // FireIntervalと合わせるか、若干短くして待機時間に使う
 
+	// 発射後の非表示時間を管理するタイマーハンドル
+	FTimerHandle TH_LaserCooldown;
+
+	// レーザーを表示しても良いかどうかのフラグ
+	UPROPERTY(VisibleAnywhere, Category = "Sniper Combat")
+	bool bCanShowLaser = true;
+
+	// 発射後のレーザー非表示時間
+	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
+	float LaserHideDuration = 1.0f;
+
+	// レーザー再表示を許可する関数
+	void AllowLaserDisplay();
+
 public:
 
 	// **【追加】** エイム予測レーザービームを表示する関数

@@ -76,9 +76,39 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	TObjectPtr<class AShootingWeapon> CurrentWeapon;
 
+	// 登り補間にかける時間
+	UPROPERTY(EditAnywhere, Category = "Climb")
+	float ClimbDuration;
+
+	// 壁方向へ向く速さ
+	UPROPERTY(EditAnywhere, Category = "Climb")
+	float LookAtInterpSpeed;
+
+	// 登れる高さの上限
+	UPROPERTY(EditAnywhere, Category = "Climb")
+	float MaxClimbHeight;
+
 	// リロード中？
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
 	bool IsReload;
 
+	// 壁のぼり中
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
+	bool IsClimbing;
+
+	// のぼれる？
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
+	bool CanClimb;
+
+	// 壁のぼりのアニメーション
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	UAnimMontage* ClimbMontage;
+
+public:
+	// 向くべき回転値
+	FRotator TargetRotation;
+
+	FHitResult ClimbTraceHit;
 public:
 	// マガジン更新時のデリゲート
 	FMagazineUpdatedDelegate OnMagazineUpdated;
@@ -154,6 +184,22 @@ protected:
 	// リロード終了処理
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoReloadEnd(class UAnimMontage* Montage, bool bInterrupted);
+
+	// 壁のぼりを試みる
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void TryStartClimb();
+
+	// 壁のぼり開始処理
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void DoStartClimb(const FHitResult& Hit);
+
+	// 壁のぼり終了処理
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	void DoEndClimb();
+
+public:
+	// 壁を確認する
+	bool CheckClimb(FHitResult& OutHit);
 
 public:
 	// 武器のメッシュをキャラクターにアタッチする処理

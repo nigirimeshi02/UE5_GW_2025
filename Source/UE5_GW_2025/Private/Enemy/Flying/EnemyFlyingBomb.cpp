@@ -21,6 +21,11 @@ void AEnemyFlyingBomb::BeginPlay()
 
 void AEnemyFlyingBomb::Tick(float DeltaTime)
 {
+	if(CurrentHealth <= 0)
+	{
+		return; // 死亡している場合は何もしない
+	}
+
 	Super::Tick(DeltaTime);
 
 	// ターゲット（通常はプレイヤー）が存在するか確認
@@ -67,7 +72,7 @@ void AEnemyFlyingBomb::Tick(float DeltaTime)
 
 
 	// --- 2. カウントダウン処理 ---
-	if (bIsCountingDown)
+	if (bIsCountingDown && !bHasExploded)
 	{
 		CurrentFuseTime -= DeltaTime;
 
@@ -81,10 +86,23 @@ void AEnemyFlyingBomb::Tick(float DeltaTime)
 	//クラッシュします
 }
 
+void AEnemyFlyingBomb::Die()
+{
+	Super::Die();
+	// メッシュをラグドール化
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (MeshComp)
+	{
+		MeshComp->SetVisibility(false, true);
+	}
+
+	// 爆発エフェクトやサウンドをここで再生可能
+}
+
 void AEnemyFlyingBomb::ExplodeAndDestroy()
 {
 	// --- 周囲に放射状ダメージを与える ---
-	float BaseDamage = 100.0f;
+	float BaseDamage = 1.0f;
 	float DamageRadius = ExplosionRadius + 200.f;
 
 	// クラッシュ回避のための修正点: UDamageType::StaticClass() で有効なクラスを設定
@@ -123,7 +141,7 @@ void AEnemyFlyingBomb::ExplodeAndDestroy()
 		DamageType1				  // ダメージタイプ
 	);
 
-	bHasExploded = false; // 一度だけ爆発するようにフラグを更新
+	bHasExploded = true; // 一度だけ爆発するようにフラグを更新
 }
 
 void AEnemyFlyingBomb::StartFuse()

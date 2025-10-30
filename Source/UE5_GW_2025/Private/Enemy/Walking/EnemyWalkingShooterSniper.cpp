@@ -66,7 +66,7 @@ void AEnemyWalkingShooterSniper::BeginPlay()
 void AEnemyWalkingShooterSniper::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Log, TEXT("Sniper initialized: Range=%f, FireCycle=%f"), FireRange, FireCycleInterval);
+	//UE_LOG(LogTemp, Log, TEXT("Sniper initialized: Range=%f, FireCycle=%f"), FireRange, FireCycleInterval);
 	// エイム予測レーザービームの表示更新
 	if (StateMachine->GetCurrentState() == EEnemyState::Attack)
 	{

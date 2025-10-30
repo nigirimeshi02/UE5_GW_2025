@@ -264,5 +264,5 @@ void AEnemyBase::Die()
     OnEnemyDied.Broadcast();
 
     // ˆê’èŠÔŒã‚ÉÁ–Å
-    SetLifeSpan(10.0f);
+    SetLifeSpan(5.0f);
 }

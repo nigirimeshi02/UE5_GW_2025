@@ -21,6 +21,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void Die() override;
+
 	/** 爆発するプレイヤーとの距離（半径） */
 	UPROPERTY(EditAnywhere, Category = "Bomb")
 	float ExplosionRadius = 250.0f; // 爆発トリガーとなる距離

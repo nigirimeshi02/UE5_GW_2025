@@ -21,14 +21,6 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
-    //// 追跡速度
-    //UPROPERTY(EditAnywhere, Category = "Movement")
-    //float FlySpeed = 300.0f;
-
-    ///** ホバリングする高さ（プレイヤーより上） */
-    //UPROPERTY(EditAnywhere, Category = "Flight")
-    //float HoverHeight = 300.f;
-
 
     // ホバリングの揺れの強さと速さ
     UPROPERTY(EditAnywhere, Category = "Flying")

@@ -3,6 +3,7 @@
 
 #include "Enemy/Flying/EnemyFlyingBomb.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 AEnemyFlyingBomb::AEnemyFlyingBomb()
 {
@@ -89,7 +90,8 @@ void AEnemyFlyingBomb::Tick(float DeltaTime)
 void AEnemyFlyingBomb::Die()
 {
 	Super::Die();
-	// メッシュをラグドール化
+
+	// メッシュを非表示にする
 	USkeletalMeshComponent* MeshComp = GetMesh();
 	if (MeshComp)
 	{
@@ -97,12 +99,26 @@ void AEnemyFlyingBomb::Die()
 	}
 
 	// 爆発エフェクトやサウンドをここで再生可能
+	// ExplosionNiagaraSystemが設定されているか確認
+	if (ExplosionNiagaraSystem)
+	{
+		// 敵の現在地 (死亡した場所) に爆発エフェクトをスポーン
+		// SpawnSystemAtLocation は Niagara をワールド空間で一度再生するのに最適
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			ExplosionNiagaraSystem,
+			GetActorLocation(), // スポーン位置
+			GetActorRotation(), // 回転 (通常はデフォルトでOK)
+			FVector(1.0f),      // スケール
+			true                // オートデストロイ (再生後自動で破棄)
+		);
+	}
 }
 
 void AEnemyFlyingBomb::ExplodeAndDestroy()
 {
 	// --- 周囲に放射状ダメージを与える ---
-	float BaseDamage = 1.0f;
+	float BaseDamage = 100.0f;
 	float DamageRadius = ExplosionRadius + 200.f;
 
 	// クラッシュ回避のための修正点: UDamageType::StaticClass() で有効なクラスを設定
@@ -156,7 +172,7 @@ void AEnemyFlyingBomb::StartFuse()
 	CurrentFuseTime = ExplosionFuseTime;
 
 	// 例: カウントダウン開始時に移動を停止する
-	FlySpeed = 0.0f;
+	//FlySpeed = 0.0f;
 
 	// 例: 警告音や点滅エフェクトを開始する
 	// PlayWarningSound();

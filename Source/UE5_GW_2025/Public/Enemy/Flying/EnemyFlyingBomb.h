@@ -25,7 +25,7 @@ protected:
 
 	/** 爆発するプレイヤーとの距離（半径） */
 	UPROPERTY(EditAnywhere, Category = "Bomb")
-	float ExplosionRadius = 250.0f; // 爆発トリガーとなる距離
+	float ExplosionRadius = 400.0f; // 爆発トリガーとなる距離
 
 	/** 一度だけ爆発したかどうか */
 	UPROPERTY(VisibleAnywhere, Category = "Bomb") // VisibleAnywhereに変更
@@ -35,12 +35,14 @@ protected:
 
 	/** 爆発までのカウントダウン時間 */
 	UPROPERTY(EditAnywhere, Category = "Bomb")
-	float ExplosionFuseTime = 2.0f; // 爆発までの時間（例: 2.0秒）
+	float ExplosionFuseTime = 3.0f; // 爆発までの時間（例: 2.0秒）
 
 	/** 現在のカウントダウンの残り時間 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb")
 	float CurrentFuseTime = 0.0f;
 
 	/** カウントダウンが開始されたかどうか */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb")
 	bool bIsCountingDown = false;
 
 	/** 爆発処理を実行し、自身に高ダメージを与える */
@@ -48,4 +50,7 @@ protected:
 
 	/** カウントダウン開始時の初期処理 */
 	void StartFuse();
+
+	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	class UNiagaraSystem* ExplosionNiagaraSystem;
 };

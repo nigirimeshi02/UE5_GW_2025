@@ -54,7 +54,7 @@ void AShootingWeapon::BeginPlay()
 
 	// マガジンを満タンにする
 	CurrentBullets = MagazineSize;
-	SpareBullets = MagazineSize * 2;
+	SpareBullets = MagazineSize * 3;
 
 	// マガジンをアタッチする
 	AttachMagazineMeshes();
@@ -150,16 +150,19 @@ void AShootingWeapon::Reload()
 
 	CurrentBullets = SpareBullets;
 
-	SpareBullets = SpareBullets - (MagazineSize - tmp);
-
-	if (SpareBullets < 0)
+	if (!InfiniteAmmo)
 	{
-		SpareBullets = 0;
-	}
+		SpareBullets = SpareBullets - (MagazineSize - tmp);
 
-	if (CurrentBullets > MagazineSize)
-	{
-		CurrentBullets = MagazineSize;
+		if (SpareBullets < 0)
+		{
+			SpareBullets = 0;
+		}
+
+		if (CurrentBullets > MagazineSize)
+		{
+			CurrentBullets = MagazineSize;
+		}
 	}
 }
 
@@ -251,7 +254,7 @@ void AShootingWeapon::FireProjectile(const FVector& TargetLocation)
 	}
 
 	// HUD更新
-	WeaponOwner->UpdateWeaponHUD(CurrentBullets, SpareBullets);
+	WeaponOwner->UpdateWeaponHUD(CurrentBullets, SpareBullets, InfiniteAmmo);
 }
 
 FTransform AShootingWeapon::CalculateProjectileSpawnTransform(const FVector& TargetLocation) const

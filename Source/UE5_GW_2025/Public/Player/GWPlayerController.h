@@ -59,7 +59,7 @@ protected:
 
 	// 所持ポーンの弾数が更新されたときに呼ばれる処理
 	UFUNCTION()
-	void OnBulletCountUpdated(int32 MagazineSize, int32 Bullets);
+	void OnBulletCountUpdated(int32 MagazineSize, int32 Bullets, bool Infinite);
 
 	// 所持ポーンのHPが更新されたときに呼ばれる関数
 	UFUNCTION()

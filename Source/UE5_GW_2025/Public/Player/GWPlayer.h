@@ -8,7 +8,7 @@
 #include "Player/Weapon/ShootingWeaponHolder.h"
 #include "GWPlayer.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMagazineUpdatedDelegate, int32, MagazineSize, int32, Bullets);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMagazineUpdatedDelegate, int32, MagazineSize, int32, Bullets, bool, Infinite);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHPUpdatedDelegate, float, MaxHP, float, CurrentHP);
 
 /**
@@ -76,6 +76,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	TObjectPtr<class AShootingWeapon> CurrentWeapon;
 
+	// 初期武器
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
+	TSubclassOf<class AShootingWeapon> InitWeapon;
+
 	// 登り補間にかける時間
 	UPROPERTY(EditAnywhere, Category = "Climb")
 	float ClimbDuration;
@@ -87,6 +91,10 @@ protected:
 	// 登れる高さの上限
 	UPROPERTY(EditAnywhere, Category = "Climb")
 	float MaxClimbHeight;
+
+	// 壁のぼりのアニメーション
+	UPROPERTY(EditDefaultsOnly, Category = "Climb")
+	UAnimMontage* ClimbMontage;
 
 	// リロード中？
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
@@ -100,15 +108,26 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
 	bool CanClimb;
 
-	// 壁のぼりのアニメーション
-	UPROPERTY(EditDefaultsOnly, Category = "Climb")
-	UAnimMontage* ClimbMontage;
+	// リコイルの回復速度
+	UPROPERTY(EditAnywhere, Category = "Recoil")
+	float RecoilRecoverySpeed = 10.0f;
+
+	// 撃った時の瞬間的な揺れ量
+	UPROPERTY(EditAnywhere, Category = "Recoil")
+	float RecoilKickStrength = 1.0f;
 
 public:
 	// 向くべき回転値
 	FRotator TargetRotation;
 
-	FHitResult ClimbTraceHit;
+	FHitResult ClimbTraceHit;	
+	
+	// 現在のリコイルオフセット
+	float CurrentRecoilPitch = 0.0f;
+
+	// 累積されたリコイル
+	float TargetRecoilPitch = 0.0f;
+
 public:
 	// マガジン更新時のデリゲート
 	FMagazineUpdatedDelegate OnMagazineUpdated;
@@ -215,7 +234,7 @@ public:
 	virtual void AddWeaponRecoil(float Recoil) override;
 
 	// HUDに現在の弾数情報を更新
-	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize) override;
+	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize, bool Infinite) override;
 
 	// 武器用の照準位置を取得
 	virtual FVector GetWeaponTargetLocation() override;

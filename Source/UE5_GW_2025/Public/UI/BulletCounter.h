@@ -18,6 +18,6 @@ public:
 
 	// 弾数を更新する
 	UFUNCTION(BlueprintImplementableEvent, Category = "BulletCounter", meta = (DisplayName = "UpdateBulletCounter"))
-	void BP_UpdateBulletCount(int32 MagazineSize, int32 BulletCount);
+	void BP_UpdateBulletCount(int32 MagazineSize, int32 BulletCount, bool Infinite);
 
 };

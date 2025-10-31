@@ -34,7 +34,7 @@ public:
 	virtual void AddWeaponRecoil(float Recoil) = 0;
 
 	// 現在の弾数とマガジンサイズをHUDに反映する関数
-	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize) = 0;
+	virtual void UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize, bool Infinite) = 0;
 
 	// 武器の照準ターゲット位置を計算して返す関数
 	virtual FVector GetWeaponTargetLocation() = 0;

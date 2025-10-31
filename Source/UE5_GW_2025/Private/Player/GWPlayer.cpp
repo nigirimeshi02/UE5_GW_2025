@@ -105,6 +105,11 @@ void AGWPlayer::BeginPlay()
 
 	}
 
+	if (InitWeapon)
+	{
+		AddWeaponClass(InitWeapon);
+	}
+
 }
 
 void AGWPlayer::Tick(float DeltaTime)
@@ -141,6 +146,19 @@ void AGWPlayer::Tick(float DeltaTime)
 
 		CanClimb = bHit;
 	}
+
+	// 現在のリコイルを滑らかに目標値へ補間
+	CurrentRecoilPitch = FMath::FInterpTo(CurrentRecoilPitch, TargetRecoilPitch, DeltaTime, RecoilRecoverySpeed);
+
+	// 視点を補正
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		float DeltaPitch = TargetRecoilPitch - CurrentRecoilPitch;
+		PC->AddPitchInput(-DeltaPitch); // 戻る方向に回転
+	}
+
+	// 目標値を0に戻していく
+	TargetRecoilPitch = FMath::FInterpTo(TargetRecoilPitch, 0.0f, DeltaTime, RecoilRecoverySpeed * 0.5f);
 }
 
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -278,7 +296,7 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 		}
 
 		// 弾数UIを更新
-		UpdateWeaponHUD(0, 0);
+		UpdateWeaponHUD(0, 0, CurrentWeapon->GetInfiniteAmmo());
 
 		UpdateHPHUD(0, 0);
 
@@ -422,7 +440,7 @@ void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsReload = false;
 
-	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetBulletSpare());
+	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetBulletSpare(), CurrentWeapon->GetInfiniteAmmo());
 }
 
 void AGWPlayer::TryStartClimb()
@@ -563,13 +581,13 @@ void AGWPlayer::PlayReloadMontage(UAnimMontage* Montage)
 
 void AGWPlayer::AddWeaponRecoil(float Recoil)
 {
-	// 反動をピッチ入力として適用する
-	AddControllerPitchInput(Recoil);
+	// 銃を撃った瞬間の上方向のリコイル追加
+	TargetRecoilPitch += Recoil * RecoilKickStrength;
 }
 
-void AGWPlayer::UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize)
+void AGWPlayer::UpdateWeaponHUD(int32 CurrentAmmo, int32 MagazineSize, bool Infinite)
 {
-	OnMagazineUpdated.Broadcast(MagazineSize, CurrentAmmo);
+	OnMagazineUpdated.Broadcast(MagazineSize, CurrentAmmo, Infinite);
 }
 
 FVector AGWPlayer::GetWeaponTargetLocation()
@@ -626,7 +644,7 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 void AGWPlayer::OnWeaponActivated(AShootingWeapon* Weapon)
 {
 	// 弾数UIを更新
-	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetBulletSpare());
+	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetBulletSpare(), Weapon->GetInfiniteAmmo());
 
 	// AnimInstancesをセット
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());

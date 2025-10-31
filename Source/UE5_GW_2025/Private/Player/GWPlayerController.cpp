@@ -80,10 +80,10 @@ void AGWPlayerController::OnPawnDestroyed(AActor* DestroyedActor)
 	}
 }
 
-void AGWPlayerController::OnBulletCountUpdated(int32 MagazineSize, int32 Bullets)
+void AGWPlayerController::OnBulletCountUpdated(int32 MagazineSize, int32 Bullets, bool Infinite)
 {
 	// UIに弾数を反映
-	BulletCounterUI->BP_UpdateBulletCount(MagazineSize, Bullets);
+	BulletCounterUI->BP_UpdateBulletCount(MagazineSize, Bullets, Infinite);
 }
 
 void AGWPlayerController::OnHPBarUpdated(float MaxHP, float CurrentHP)

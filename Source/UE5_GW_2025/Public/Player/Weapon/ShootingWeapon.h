@@ -33,12 +33,14 @@ protected:
 	int32 MagazineSize = 10;
 
 	// 予備のマガジン内の弾の数
-	UPROPERTY(EditAnywhere, Category = "Ammo")
-	int32 SpareBullets = 10;
+	int32 SpareBullets = 0;
 
 	// 現在のマガジン内の弾の数
-	UPROPERTY(EditAnywhere, Category = "Ammo")
 	int32 CurrentBullets = 0;
+
+	// 弾数無限？
+	UPROPERTY(EditAnywhere, Category = "Ammo")
+	bool InfiniteAmmo = false;
 
 	// 銃を撃つときのアニメーション
 	UPROPERTY(EditAnywhere, Category = "Animation")
@@ -130,6 +132,10 @@ protected:
 	// マズルフラッシュの回転
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	FRotator MuzzleFlashRotation;
+
+	// 武器の名前
+	UPROPERTY(EditAnywhere)
+	FName WeaponName;
 	
 public:	
 	// コンストラクタ
@@ -209,7 +215,15 @@ public:
 	// 現在のマガジン内の弾の数を取得
 	int32 GetBulletCount() const { return CurrentBullets; }
 
+	// 弾数無限かどうか取得
+	bool GetInfiniteAmmo()const { return InfiniteAmmo; }
+
 	// マガジンのメッシュコンポーネントを取得
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	UStaticMeshComponent* GetMagazineMeshComp()const { return MagazineMeshComp; }
+
+	// 武器の名前を取得
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FName GetWeaponName()const { return WeaponName; }
+
 };

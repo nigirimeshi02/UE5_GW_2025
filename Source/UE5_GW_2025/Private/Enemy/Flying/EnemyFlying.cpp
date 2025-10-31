@@ -14,51 +14,6 @@ void AEnemyFlying::BeginPlay()
     
 }
 
-//void AEnemyFlying::Tick(float DeltaTime)
-//{
-//    Super::Tick(DeltaTime);
-//
-//    /*if (!StateMachine || StateMachine->GetCurrentState() != EEnemyState::Chase)
-//        return;
-//
-//    AActor* Target = StateMachine->GetTarget();
-//    if (!Target) return;
-//
-//    FVector ToTarget = Target->GetActorLocation() - GetActorLocation();
-//    FVector Direction = ToTarget.GetSafeNormal();
-//
-//    FVector NewLocation = GetActorLocation() + Direction * FlySpeed * DeltaTime;
-//    SetActorLocation(NewLocation);*/
-//
-//    if (!StateMachine || StateMachine->GetCurrentState() != EEnemyState::Chase)
-//        return;
-//
-//    AActor* Target = StateMachine->GetTarget();
-//    if (!Target) return;
-//
-//    FVector CurrentLocation = GetActorLocation();
-//    FVector TargetLocation = Target->GetActorLocation();
-//
-//	// 目標位置までの距離が許容半径以上なら移動
-//	FVector TargetLength = TargetLocation - CurrentLocation;
-//    if (TargetLength.Length() >= AcceptanceRadius) {
-//
-//        // プレイヤーのXZ方向だけを追いかける
-//        FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z) - CurrentLocation;
-//        FVector HorizontalDirection = HorizontalToTarget.GetSafeNormal();
-//
-//        // Z方向の目標位置はプレイヤー + HoverHeight
-//        float TargetZ = TargetLocation.Z + HoverHeight;
-//        float NewZ = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 2.0f); // 高さだけゆっくり補間
-//
-//        // 新しい位置を計算
-//        FVector NewLocation = CurrentLocation + HorizontalDirection * FlySpeed * DeltaTime;
-//        NewLocation.Z = NewZ;
-//
-//        SetActorLocation(NewLocation);
-//    }
-//}
-
 void AEnemyFlying::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
@@ -124,7 +79,6 @@ void AEnemyFlying::OnPlayerLost()
 
     // 高度を維持する場合（落下防止）
     FVector CurrentLocation = GetActorLocation();
-    //SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, HoverAltitude));
     SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, CurrentLocation.Z));
 
     // 状態遷移：探し中

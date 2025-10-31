@@ -32,7 +32,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Ammo")
 	int32 MagazineSize = 10;
 
+	// 予備のマガジン内の弾の数
+	UPROPERTY(EditAnywhere, Category = "Ammo")
+	int32 SpareBullets = 10;
+
 	// 現在のマガジン内の弾の数
+	UPROPERTY(EditAnywhere, Category = "Ammo")
 	int32 CurrentBullets = 0;
 
 	// 銃を撃つときのアニメーション
@@ -197,6 +202,9 @@ public:
 
 	// マガジン内の弾の数を取得
 	int32 GetMagazineSize() const { return MagazineSize; };
+
+	// 予備のマガジン内の弾の数を取得
+	int32 GetBulletSpare()const { return SpareBullets; }
 
 	// 現在のマガジン内の弾の数を取得
 	int32 GetBulletCount() const { return CurrentBullets; }

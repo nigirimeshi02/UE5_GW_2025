@@ -50,4 +50,7 @@ public:
 
 	// セミオート武器のクールダウンが終了し再発射可能になったことを通知する関数
 	virtual void OnSemiWeaponRefire() = 0;
+
+	// リロード
+	virtual void Reload() = 0;
 };

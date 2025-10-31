@@ -29,8 +29,8 @@ AShootingProjectile::AShootingProjectile()
 	// 弾の移動コンポーネントを作成（SceneComponent ではないのでアタッチは不要）
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement"));
 
-	ProjectileMovement->InitialSpeed = 10000.0f;  // 初速
-	ProjectileMovement->MaxSpeed = 10000.0f;      // 最大速度
+	ProjectileMovement->InitialSpeed = 50000.0;  // 初速
+	ProjectileMovement->MaxSpeed = 50000.0;      // 最大速度
 	ProjectileMovement->bShouldBounce = true;    // 反射を有効化
 
 	// ダメージタイプの初期値を設定

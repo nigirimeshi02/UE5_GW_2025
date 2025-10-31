@@ -232,6 +232,9 @@ public:
 	// セミオート武器の再発射可能通知
 	virtual void OnSemiWeaponRefire() override;
 
+	// リロード
+	virtual void Reload()override;
+
 protected:
 	// 指定クラスの武器をすでに所持しているかを確認
 	AShootingWeapon* FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const;

@@ -137,7 +137,7 @@ void AGWPlayer::Tick(float DeltaTime)
 		);
 
 		// デバッグ表示（赤い線でトレース確認）
-		DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
+		//DrawDebugLine(GetWorld(), Start, End, bHit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
 
 		CanClimb = bHit;
 	}
@@ -364,7 +364,7 @@ void AGWPlayer::DoStartFiring()
 {
 	// 現在の装備中の武器で射撃
 	if (CurrentWeapon && !IsReload)
-	{
+	{		
 		CurrentWeapon->StartFiring();
 	}
 }
@@ -415,19 +415,14 @@ void AGWPlayer::DoSwitchWeapon()
 
 void AGWPlayer::DoReloadStart()
 {
-	// 装備中かつリロード中ではないなら
-	if (CurrentWeapon && !IsReload)
-	{
-		IsReload = true;
-		CurrentWeapon->Reload();
-	}
+	Reload();
 }
 
 void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsReload = false;
 
-	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetMagazineSize());
+	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetBulletSpare());
 }
 
 void AGWPlayer::TryStartClimb()
@@ -519,7 +514,7 @@ bool AGWPlayer::CheckClimb(FHitResult& OutHit)
 	);
 
 	// デバッグ表示（赤い線でトレース確認）
-	DrawDebugLine(GetWorld(), Start, End, Hit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
+	//DrawDebugLine(GetWorld(), Start, End, Hit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
 
 	return Hit;
 }
@@ -631,7 +626,7 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 void AGWPlayer::OnWeaponActivated(AShootingWeapon* Weapon)
 {
 	// 弾数UIを更新
-	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetMagazineSize());
+	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetBulletSpare());
 
 	// AnimInstancesをセット
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());
@@ -646,6 +641,22 @@ void AGWPlayer::OnWeaponDeactivated(AShootingWeapon* Weapon)
 void AGWPlayer::OnSemiWeaponRefire()
 {
 	// unused
+}
+
+void AGWPlayer::Reload()
+{
+	// 予備の弾がないならリロードしない
+	if (CurrentWeapon->GetBulletSpare() <= 0)
+	{
+		return;
+	}
+
+	// 装備中かつリロード中ではないなら
+	if (CurrentWeapon && !IsReload)
+	{
+		IsReload = true;
+		CurrentWeapon->Reload();
+	}
 }
 
 AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const

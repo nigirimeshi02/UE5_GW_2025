@@ -116,10 +116,23 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Recoil")
 	float RecoilKickStrength = 1.0f;
 
+	// 壁走り中？
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
+	bool IsWallRunning;
+
+	// 壁走りできる時間
+	UPROPERTY(EditAnywhere, Category = "WallRun")
+	float MaxWallRunTime = 1.5f;
+
+	// 壁走りのクールタイム
+	UPROPERTY(EditAnywhere, Category = "WallRun")
+	float WallRunCoolTime = 0.5f;
+
 public:
 	// 向くべき回転値
 	FRotator TargetRotation;
 
+	// 壁のぼり壁検知用
 	FHitResult ClimbTraceHit;	
 	
 	// 現在のリコイルオフセット
@@ -127,6 +140,21 @@ public:
 
 	// 累積されたリコイル
 	float TargetRecoilPitch = 0.0f;
+
+	// 右の壁？
+	bool RightWall;
+
+	// 走る壁の法線
+	FVector WallRunNormal;
+
+	// 走る壁の方向
+	FVector WallRunDirection;
+
+	// 現在の壁走りしている時間
+	float WallRunDuration = 0.0f;
+
+	// 現在の壁走りのクールタイムの時間
+	float WallRunCooldownTimer = 0.0f;
 
 public:
 	// マガジン更新時のデリゲート
@@ -216,9 +244,16 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoEndClimb();
 
-public:
 	// 壁を確認する
 	bool CheckClimb(FHitResult& OutHit);
+
+	void DoStartWallRun(const FVector& WallNormal, bool RightSide);
+
+	void DoStopWallRun();
+
+	bool TraceWall(FVector& OutWallNormal, bool RightSide);
+
+	void CheckWallRun();
 
 public:
 	// 武器のメッシュをキャラクターにアタッチする処理

@@ -78,12 +78,12 @@ AGWPlayer::AGWPlayer()
 	ReloadAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Reload"));
 
 	ClimbDuration = 0.15f;
-
-	LookAtInterpSpeed = 10.0f; // 壁方向へ向く速さ
+	LookAtInterpSpeed = 10.0f;
 
 	IsReload = false;
 	IsClimbing = false;
 	CanClimb = false;
+	IsWallRunning = false;
 }
 
 void AGWPlayer::BeginPlay()
@@ -159,6 +159,35 @@ void AGWPlayer::Tick(float DeltaTime)
 
 	// 目標値を0に戻していく
 	TargetRecoilPitch = FMath::FInterpTo(TargetRecoilPitch, 0.0f, DeltaTime, RecoilRecoverySpeed * 0.5f);
+
+	if (WallRunCooldownTimer > 0.f)WallRunCooldownTimer -= DeltaTime;
+
+	if (IsWallRunning)
+	{
+		WallRunDuration += DeltaTime;
+
+		// 時間切れ or 壁消失で終了
+		FVector CheckNormal;
+		bool StillOnWall = TraceWall(CheckNormal, RightWall);
+		if (!StillOnWall || WallRunDuration > MaxWallRunTime)
+		{
+			DoStopWallRun();
+			return;
+		}
+
+		// 壁に押し付ける力
+		FVector ForceToWall = -WallRunNormal * 600.f;
+		GetCharacterMovement()->AddForce(ForceToWall);
+	}
+	else if (WallRunCooldownTimer <= 0.f)
+	{
+		CheckWallRun();
+	}
+
+	FRotator TargetRot = GetControlRotation();
+	TargetRot.Roll = IsWallRunning ? (RightWall ? 15.f : -15.f) : 0.f;
+	FRotator NewRot = FMath::RInterpTo(GetControlRotation(), TargetRot, DeltaTime, 5.f);
+	Controller->SetControlRotation(NewRot);
 }
 
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -368,6 +397,14 @@ void AGWPlayer::DoMove(float Right, float Forward)
 
 void AGWPlayer::DoJumpStart()
 {
+	if (IsWallRunning)
+	{
+		FVector JumpDir = (WallRunNormal + FVector::UpVector * 0.5f).GetSafeNormal();
+		LaunchCharacter(JumpDir * 500.f, true, true);
+		DoStopWallRun();
+		return;
+	}
+
 	// キャラクターのJumpを使用
 	Jump();
 }
@@ -535,6 +572,73 @@ bool AGWPlayer::CheckClimb(FHitResult& OutHit)
 	//DrawDebugLine(GetWorld(), Start, End, Hit ? FColor::Green : FColor::Red, false, 0.1f, 0, 1.0f);
 
 	return Hit;
+}
+
+void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
+{
+	if (IsWallRunning) return;
+
+	IsWallRunning = true;
+	RightWall = RightSide;
+	WallRunNormal = WallNormal;
+
+	// 壁方向（法線×上方向）
+	WallRunDirection = FVector::CrossProduct(FVector::UpVector, WallNormal);
+	if (!RightSide)
+		WallRunDirection *= -1;
+
+	GetCharacterMovement()->GravityScale = 0.f;
+	GetCharacterMovement()->Velocity = WallRunDirection * 1000.f; // スピード感
+
+	WallRunDuration = 0.f;
+}
+
+void AGWPlayer::DoStopWallRun()
+{
+	if (!IsWallRunning) return;
+
+	IsWallRunning = false;
+	GetCharacterMovement()->GravityScale = 1.0f;
+	// 壁走りを一定時間禁止
+	WallRunCooldownTimer = WallRunCoolTime;
+
+}
+
+bool AGWPlayer::TraceWall(FVector& OutWallNormal, bool RightSide)
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start + (RightSide ? GetActorRightVector() : -GetActorRightVector()) * 50.f;
+
+	FHitResult Hit;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	{
+		if (Hit.Normal.Z < 0.2f)	// 水平壁だけ
+		{
+			OutWallNormal = Hit.Normal;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void AGWPlayer::CheckWallRun()
+{
+	if (GetCharacterMovement()->IsFalling())
+	{
+		FVector WallNormal;
+		if (TraceWall(WallNormal, true))
+		{
+			DoStartWallRun(WallNormal, true);
+		}
+		else if (TraceWall(WallNormal, false))
+		{
+			DoStartWallRun(WallNormal, false);
+		}
+	}
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)

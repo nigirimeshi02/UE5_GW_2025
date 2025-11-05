@@ -121,12 +121,16 @@ protected:
 	bool IsWallRunning;
 
 	// 壁走りできる時間
-	UPROPERTY(EditAnywhere, Category = "WallRun")
-	float MaxWallRunTime = 1.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WallRun")
+	float MaxWallRunTime = 3.0f;
+
+	// 現在の壁走りしている時間
+	UPROPERTY(BlueprintReadOnly, Category = "WallRun")
+	float WallRunDuration = 0.0f;
 
 	// 壁走りのクールタイム
 	UPROPERTY(EditAnywhere, Category = "WallRun")
-	float WallRunCoolTime = 0.5f;
+	float WallRunCoolTime = 1.0f;
 
 public:
 	// 向くべき回転値
@@ -149,9 +153,6 @@ public:
 
 	// 走る壁の方向
 	FVector WallRunDirection;
-
-	// 現在の壁走りしている時間
-	float WallRunDuration = 0.0f;
 
 	// 現在の壁走りのクールタイムの時間
 	float WallRunCooldownTimer = 0.0f;
@@ -247,12 +248,16 @@ protected:
 	// 壁を確認する
 	bool CheckClimb(FHitResult& OutHit);
 
+	// 壁走り開始処理
 	void DoStartWallRun(const FVector& WallNormal, bool RightSide);
 
+	// 壁走り終了処理
 	void DoStopWallRun();
 
+	// 壁走りできるか確認
 	bool TraceWall(FVector& OutWallNormal, bool RightSide);
 
+	// 壁走りのチェック
 	void CheckWallRun();
 
 public:

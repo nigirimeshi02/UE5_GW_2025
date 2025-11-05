@@ -178,6 +178,9 @@ void AGWPlayer::Tick(float DeltaTime)
 		// 壁に押し付ける力
 		FVector ForceToWall = -WallRunNormal * 600.f;
 		GetCharacterMovement()->AddForce(ForceToWall);
+
+		GetCharacterMovement()->Velocity = WallRunDirection * 1500.f; // スピード感
+
 	}
 	else if (WallRunCooldownTimer <= 0.f)
 	{
@@ -185,7 +188,7 @@ void AGWPlayer::Tick(float DeltaTime)
 	}
 
 	FRotator TargetRot = GetControlRotation();
-	TargetRot.Roll = IsWallRunning ? (RightWall ? 15.f : -15.f) : 0.f;
+	TargetRot.Roll = IsWallRunning ? (RightWall ? -20.f : 20.f) : 0.f;
 	FRotator NewRot = FMath::RInterpTo(GetControlRotation(), TargetRot, DeltaTime, 5.f);
 	Controller->SetControlRotation(NewRot);
 }
@@ -576,7 +579,7 @@ bool AGWPlayer::CheckClimb(FHitResult& OutHit)
 
 void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 {
-	if (IsWallRunning) return;
+	//if (IsWallRunning) return;
 
 	IsWallRunning = true;
 	RightWall = RightSide;
@@ -588,7 +591,7 @@ void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 		WallRunDirection *= -1;
 
 	GetCharacterMovement()->GravityScale = 0.f;
-	GetCharacterMovement()->Velocity = WallRunDirection * 1000.f; // スピード感
+	GetCharacterMovement()->Velocity = WallRunDirection * 1500.f; // スピード感
 
 	WallRunDuration = 0.f;
 }
@@ -612,8 +615,8 @@ bool AGWPlayer::TraceWall(FVector& OutWallNormal, bool RightSide)
 	FHitResult Hit;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	bool trace = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	if (trace)
 	{
 		if (Hit.Normal.Z < 0.2f)	// 水平壁だけ
 		{

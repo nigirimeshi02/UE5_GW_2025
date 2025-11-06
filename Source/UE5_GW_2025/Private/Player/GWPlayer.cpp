@@ -176,17 +176,24 @@ void AGWPlayer::Tick(float DeltaTime)
 		}
 
 		// 壁に押し付ける力
-		FVector ForceToWall = -WallRunNormal * 600.f;
+		FVector ForceToWall = -WallRunNormal * 800.f;
 		GetCharacterMovement()->AddForce(ForceToWall);
 
-		GetCharacterMovement()->Velocity = WallRunDirection * 1500.f; // スピード感
+		GetCharacterMovement()->Velocity = WallRunDirection * WallRunSpeed; // スピード感
 
+		// カメラを壁方向にスムーズに向ける
+		//FRotator ControlRot = Controller->GetControlRotation();
+		//FRotator TargetRot = ControlRot;
+		//TargetRot.Yaw = WallRunTargetYaw;
+		//FRotator NewRot = FMath::RInterpTo(ControlRot, TargetRot, DeltaTime, WallRunLookInterpSpeed);
+		//Controller->SetControlRotation(NewRot);
 	}
 	else if (WallRunCooldownTimer <= 0.f)
 	{
 		CheckWallRun();
 	}
 
+	// 壁走り時の視点傾き
 	FRotator TargetRot = GetControlRotation();
 	TargetRot.Roll = IsWallRunning ? (RightWall ? -20.f : 20.f) : 0.f;
 	FRotator NewRot = FMath::RInterpTo(GetControlRotation(), TargetRot, DeltaTime, 5.f);
@@ -382,6 +389,13 @@ void AGWPlayer::DoAim(float Yaw, float Pitch)
 {
 	if (GetController() && !IsClimbing)
 	{
+		if (IsWallRunning)
+		{
+			LimitWallRunCamera(Yaw);
+			AddControllerPitchInput(Pitch);
+			return;
+		}
+
 		// 回転入力を渡す
 		AddControllerYawInput(Yaw);
 		AddControllerPitchInput(Pitch);
@@ -402,8 +416,19 @@ void AGWPlayer::DoJumpStart()
 {
 	if (IsWallRunning)
 	{
-		FVector JumpDir = (WallRunNormal + FVector::UpVector * 0.5f).GetSafeNormal();
-		LaunchCharacter(JumpDir * 500.f, true, true);
+		// --- 壁走りからのブーストジャンプ処理 ---
+		FVector Forward = GetActorForwardVector();
+		FVector WallPush = WallRunNormal * 0.6f;      // 壁から離す力
+		FVector Up = FVector::UpVector * 0.4f;        // 上方向
+		FVector BoostDir = (Forward + WallPush + Up).GetSafeNormal();
+
+		// 加速（前方向の慣性を強調）
+		LaunchCharacter(BoostDir * 1000.f, true, true);
+
+		// 少し壁から押し出してトレースを回避
+		AddActorWorldOffset(WallRunNormal * 25.f, true);
+
+		// 壁走り解除
 		DoStopWallRun();
 		return;
 	}
@@ -591,9 +616,13 @@ void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 		WallRunDirection *= -1;
 
 	GetCharacterMovement()->GravityScale = 0.f;
-	GetCharacterMovement()->Velocity = WallRunDirection * 1500.f; // スピード感
+	GetCharacterMovement()->Velocity = WallRunDirection * WallRunSpeed; // スピード感
 
 	WallRunDuration = 0.f;
+
+	// 壁方向を基準Yawとして記録
+	WallRunTargetYaw = WallRunDirection.Rotation().Yaw;
+
 }
 
 void AGWPlayer::DoStopWallRun()
@@ -610,7 +639,7 @@ void AGWPlayer::DoStopWallRun()
 bool AGWPlayer::TraceWall(FVector& OutWallNormal, bool RightSide)
 {
 	FVector Start = GetActorLocation();
-	FVector End = Start + (RightSide ? GetActorRightVector() : -GetActorRightVector()) * 50.f;
+	FVector End = Start + (RightSide ? GetActorRightVector() : -GetActorRightVector()) * 80.f;
 
 	FHitResult Hit;
 	FCollisionQueryParams Params;
@@ -642,6 +671,17 @@ void AGWPlayer::CheckWallRun()
 			DoStartWallRun(WallNormal, false);
 		}
 	}
+}
+
+void AGWPlayer::LimitWallRunCamera(float Value)
+{
+	FRotator Rot = Controller->GetControlRotation();
+	float DeltaYaw = FMath::FindDeltaAngleDegrees(WallRunTargetYaw, Rot.Yaw);
+	float NewYawDelta = FMath::Clamp(DeltaYaw + Value * 2.0f, -WallRunYawRange, WallRunYawRange);
+	float NewYaw = WallRunTargetYaw + NewYawDelta;
+
+	Rot.Yaw = NewYaw;
+	Controller->SetControlRotation(Rot);
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)

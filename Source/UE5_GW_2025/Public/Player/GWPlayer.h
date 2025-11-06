@@ -130,7 +130,11 @@ protected:
 
 	// 壁走りのクールタイム
 	UPROPERTY(EditAnywhere, Category = "WallRun")
-	float WallRunCoolTime = 1.0f;
+	float WallRunCoolTime = 0.5f;
+
+	// 壁走りのスピード
+	UPROPERTY(EditAnywhere, Category = "WallRun")
+	float WallRunSpeed = 1500.0f;
 
 public:
 	// 向くべき回転値
@@ -156,6 +160,15 @@ public:
 
 	// 現在の壁走りのクールタイムの時間
 	float WallRunCooldownTimer = 0.0f;
+
+	// 壁走り中の視点制限
+	float WallRunYawRange = 30.f;     // 左右 ±30度まで
+
+	// 壁走り方向を基準にする角度
+	float WallRunTargetYaw = 0.f;
+
+	// 視点を壁方向にスムーズに向ける速度
+	float WallRunLookInterpSpeed = 10.f;
 
 public:
 	// マガジン更新時のデリゲート
@@ -259,6 +272,9 @@ protected:
 
 	// 壁走りのチェック
 	void CheckWallRun();
+
+	// 壁走り中の視点制限
+	void LimitWallRunCamera(float Value);
 
 public:
 	// 武器のメッシュをキャラクターにアタッチする処理

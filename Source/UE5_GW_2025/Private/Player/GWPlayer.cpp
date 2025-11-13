@@ -76,6 +76,8 @@ AGWPlayer::AGWPlayer()
 	SwitchWeaponAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_SwapWeapon"));
 	// IA_Reloadを読み込む
 	ReloadAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_Reload"));
+	// IA_ADSを読み込む
+	ADSAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/Input/Actions/IA_ADS"));
 
 	ClimbDuration = 0.15f;
 	LookAtInterpSpeed = 10.0f;
@@ -109,7 +111,6 @@ void AGWPlayer::BeginPlay()
 	{
 		AddWeaponClass(InitWeapon);
 	}
-
 }
 
 void AGWPlayer::Tick(float DeltaTime)
@@ -171,7 +172,7 @@ void AGWPlayer::Tick(float DeltaTime)
 		bool StillOnWall = TraceWall(CheckNormal, RightWall);
 		if (!StillOnWall || WallRunDuration > MaxWallRunTime)
 		{
-			DoStopWallRun();
+			DoEndWallRun();
 			return;
 		}
 
@@ -198,6 +199,11 @@ void AGWPlayer::Tick(float DeltaTime)
 	TargetRot.Roll = IsWallRunning ? (RightWall ? -20.f : 20.f) : 0.f;
 	FRotator NewRot = FMath::RInterpTo(GetControlRotation(), TargetRot, DeltaTime, 5.f);
 	Controller->SetControlRotation(NewRot);
+
+	// ADS時のFOV補間
+	float TargetFOV = IsAiming ? ADSFOV : DefaultFOV;
+	float CurrentFOV = FMath::FInterpTo(FirstPersonCameraComponent->FieldOfView, TargetFOV, DeltaTime, ADSFOVInterpSpeed);
+	FirstPersonCameraComponent->SetFieldOfView(CurrentFOV);
 }
 
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -229,6 +235,10 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 		// Reload
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Triggered, this, &AGWPlayer::DoReloadStart);
+
+		// ADS
+		EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Started, this, &AGWPlayer::DoStartADS);
+		EnhancedInputComponent->BindAction(ADSAction, ETriggerEvent::Completed, this, &AGWPlayer::DoEndADS);
 	}
 }
 
@@ -429,7 +439,7 @@ void AGWPlayer::DoJumpStart()
 		AddActorWorldOffset(WallRunNormal * 25.f, true);
 
 		// 壁走り解除
-		DoStopWallRun();
+		DoEndWallRun();
 		return;
 	}
 
@@ -625,7 +635,7 @@ void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 
 }
 
-void AGWPlayer::DoStopWallRun()
+void AGWPlayer::DoEndWallRun()
 {
 	if (!IsWallRunning) return;
 
@@ -682,6 +692,18 @@ void AGWPlayer::LimitWallRunCamera(float Value)
 
 	Rot.Yaw = NewYaw;
 	Controller->SetControlRotation(Rot);
+}
+
+void AGWPlayer::DoStartADS()
+{
+	ADSAlpha = 1.0f;
+	IsAiming = true;
+}
+
+void AGWPlayer::DoEndADS()
+{
+	ADSAlpha = 0.0f;
+	IsAiming = false;
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
@@ -820,6 +842,7 @@ void AGWPlayer::Reload()
 	if (CurrentWeapon && !IsReload)
 	{
 		IsReload = true;
+		IsAiming = false;
 		CurrentWeapon->Reload();
 	}
 }

@@ -56,6 +56,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* ReloadAction;
 
+	// ADS用のインプットアクション
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* ADSAction;
+
 	// 一人称武器ソケットの名前
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 	FName FirstPersonWeaponSocket = FName("HandGrip_R");
@@ -136,6 +140,22 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "WallRun")
 	float WallRunSpeed = 1500.0f;
 
+	// ADS用の値
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ADS")
+	float ADSAlpha = 0.0f;
+
+	// ADS中？
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "bool")
+	bool IsAiming = false;
+
+	// ADS時のFOV
+	UPROPERTY(EditDefaultsOnly, Category = "ADS")
+	float ADSFOV = 60.f;
+
+	// ADS時のFOVの補間速度
+	UPROPERTY(EditDefaultsOnly, Category = "ADS")
+	float ADSFOVInterpSpeed = 15.f;
+
 public:
 	// 向くべき回転値
 	FRotator TargetRotation;
@@ -169,6 +189,9 @@ public:
 
 	// 視点を壁方向にスムーズに向ける速度
 	float WallRunLookInterpSpeed = 10.f;
+
+	// デフォルトのFOV
+	float DefaultFOV = 90.f;
 
 public:
 	// マガジン更新時のデリゲート
@@ -211,51 +234,39 @@ protected:
 	void LookInput(const FInputActionValue& Value);
 
 	// エイム処理（Yaw/Pitch指定）
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoAim(float Yaw, float Pitch);
 
 	// 移動処理（方向指定）
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoMove(float Right, float Forward);
 
 	// ジャンプ開始処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpStart();
 
 	// ジャンプ終了処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpEnd();
 
 	// 射撃開始処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoStartFiring();
 
 	// 射撃停止処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoStopFiring();
 
 	// 武器切り替え処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoSwitchWeapon();
 
 	// リロード開始処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoReloadStart();
 
 	// リロード終了処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoReloadEnd(class UAnimMontage* Montage, bool bInterrupted);
 
 	// 壁のぼりを試みる
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void TryStartClimb();
 
 	// 壁のぼり開始処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoStartClimb(const FHitResult& Hit);
 
 	// 壁のぼり終了処理
-	UFUNCTION(BlueprintCallable, Category = "Input")
 	void DoEndClimb();
 
 	// 壁を確認する
@@ -265,7 +276,7 @@ protected:
 	void DoStartWallRun(const FVector& WallNormal, bool RightSide);
 
 	// 壁走り終了処理
-	void DoStopWallRun();
+	void DoEndWallRun();
 
 	// 壁走りできるか確認
 	bool TraceWall(FVector& OutWallNormal, bool RightSide);
@@ -275,6 +286,12 @@ protected:
 
 	// 壁走り中の視点制限
 	void LimitWallRunCamera(float Value);
+
+	// ADS開始処理
+	void DoStartADS();
+
+	// ADS終了処理
+	void DoEndADS();
 
 public:
 	// 武器のメッシュをキャラクターにアタッチする処理

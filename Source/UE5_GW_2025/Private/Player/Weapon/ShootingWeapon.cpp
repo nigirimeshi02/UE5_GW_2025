@@ -143,6 +143,8 @@ void AShootingWeapon::StopFiring()
 
 void AShootingWeapon::Reload()
 {
+	StopFiring();
+
 	WeaponOwner->PlayReloadMontage(ReloadMontage);
 
 	// 現在の弾数を知っておく
@@ -178,7 +180,6 @@ void AShootingWeapon::Fire()
 	if (CurrentBullets <= 0)
 	{
 		WeaponOwner->Reload();
-		StopFiring();
 		return;
 	}
 

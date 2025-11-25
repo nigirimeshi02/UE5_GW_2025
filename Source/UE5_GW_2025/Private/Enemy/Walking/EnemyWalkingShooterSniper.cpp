@@ -161,8 +161,10 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 
 	// 予測線はブレさせず、クリーンな中心線を出すことが多い
 	// ここではシンプルにターゲット方向を使用します。
+	LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
 	FRotator AimRotation = LookAt;
 	FVector Direction = AimRotation.Vector();
+	UE_LOG(LogTemp, Log, TEXT("EnemySniperDirection: %f %f %f!"), Direction.X, Direction.Y, Direction.Z);
 
 	// ----------------------------------------------------
 	// B. ビームパーティクルの設定

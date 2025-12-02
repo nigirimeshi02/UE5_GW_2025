@@ -335,6 +335,9 @@ public:
 	// HUDに現在のHP情報を更新
 	void UpdateHPHUD(int32 CurrentHP, int32 MaxHP);
 
+	// 初期武器の追加
+	void AddWeaponInit();
+
 public:
 	// 一人称メッシュを取得
 	USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }

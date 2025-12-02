@@ -42,6 +42,10 @@ protected:
 	// 生成されたHPバー UI の参照
 	TObjectPtr<class UHPBar> HPBarUI;
 
+public:
+	// コンストラクタ
+	AGWPlayerController();
+
 protected:
 
 	// ゲーム開始時に呼ばれる初期化処理

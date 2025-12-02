@@ -10,6 +10,12 @@
 #include "UI/HPBar.h"
 #include "Abilities/PlayerAttributeSet.h"
 #include "Player/GWPlayerState.h"
+#include "Player/GWPlayerCameraManager.h"
+
+AGWPlayerController::AGWPlayerController()
+{
+	PlayerCameraManagerClass = AGWPlayerCameraManager::StaticClass();
+}
 
 void AGWPlayerController::BeginPlay()
 {
@@ -22,6 +28,22 @@ void AGWPlayerController::BeginPlay()
 	// HPバーのUIウィジェットを作成し、画面に追加する
 	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
 	HPBarUI->AddToPlayerScreen(1);
+
+	// 現在の HP を取得
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
+	if (GWPS)
+	{
+		UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+		if (HPBarUI)
+		{
+			HPBarUI->BP_UpdateHPBar(AttributeSet->GetMaxHealth(), AttributeSet->GetHealth());
+		}
+		if (AGWPlayer* GWPlayer = Cast<AGWPlayer>(GetPawn()))
+		{
+			GWPlayer->AddWeaponInit();
+		}
+	}
+
 }
 
 void AGWPlayerController::SetupInputComponent()
@@ -54,6 +76,20 @@ void AGWPlayerController::OnPossess(APawn* InPawn)
 
 		// HPバーが更新されたイベントにバインド
 		GWPlayer->OnHPBarUpdated.AddDynamic(this, &AGWPlayerController::OnHPBarUpdated);
+
+		// 現在の HP を取得
+		AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
+		if (GWPS)
+		{
+			// BeginPlayよりも先にここが呼ばれるため最初はnull
+			// 以下の処理はポーンが切り替わった時用
+			if (HPBarUI)
+			{
+				UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+				HPBarUI->BP_UpdateHPBar(AttributeSet->GetMaxHealth(), AttributeSet->GetHealth());
+				GWPlayer->AddWeaponInit();
+			}
+		}
 	}
 }
 

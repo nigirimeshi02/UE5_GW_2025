@@ -91,26 +91,6 @@ AGWPlayer::AGWPlayer()
 void AGWPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
-
-	if (GWPC)
-	{
-		AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
-
-		if (GWPS)
-		{
-			UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
-
-			UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
-		}
-
-	}
-
-	if (InitWeapon)
-	{
-		AddWeaponClass(InitWeapon);
-	}
 }
 
 void AGWPlayer::Tick(float DeltaTime)
@@ -866,4 +846,9 @@ AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> Weapon
 void AGWPlayer::UpdateHPHUD(int32 CurrentHP, int32 MaxHP)
 {
 	OnHPBarUpdated.Broadcast(MaxHP, CurrentHP);
+}
+
+void AGWPlayer::AddWeaponInit()
+{
+	AddWeaponClass(InitWeapon);
 }

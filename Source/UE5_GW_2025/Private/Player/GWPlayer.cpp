@@ -855,6 +855,8 @@ bool AGWPlayer::RemoveWeapon(AShootingWeapon* Weapon)
 void AGWPlayer::AddAmmo()
 {
 	CurrentWeapon->AddAmmo();
+
+	UpdateWeaponHUD(CurrentWeapon->GetCurrentBullets(), CurrentWeapon->GetSpareBullets(), CurrentWeapon->GetInfiniteAmmo());
 }
 
 bool AGWPlayer::CheckAddAmmo()

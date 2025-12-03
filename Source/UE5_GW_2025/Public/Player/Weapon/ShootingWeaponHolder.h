@@ -53,4 +53,17 @@ public:
 
 	// リロード
 	virtual void Reload() = 0;
+
+	// 武器を追加できるか確認
+	virtual bool CheckAddWeapon() = 0;
+
+	// 指定された武器を削除する
+	virtual bool RemoveWeapon(class AShootingWeapon* Weapon) = 0;
+
+	// 弾薬の追加
+	virtual void AddAmmo() = 0;
+
+	// 弾薬の追加ができるか確認する
+	virtual bool CheckAddAmmo() = 0;
+	
 };

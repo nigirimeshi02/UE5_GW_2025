@@ -176,5 +176,5 @@ public:
 	int32 GetMagazineSize() const { return MagazineSize; };
 
 	/** Returns the current bullet count */
-	int32 GetBulletCount() const { return CurrentBullets; }
+	int32 GetCurrentBullets() const { return CurrentBullets; }
 };

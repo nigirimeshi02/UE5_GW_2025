@@ -294,23 +294,6 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
 	
-	// PointDamageEvent か RadialDamageEvent かを判別
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	{
-		const FPointDamageEvent* PointDamageEvent = (FPointDamageEvent*)&DamageEvent;
-
-		// ヒットしたボーン名を取得
-		FName HitBone = PointDamageEvent->HitInfo.BoneName;
-
-		UE_LOG(LogTemp, Log, TEXT("Hit Bone: %s"), *HitBone.ToString());
-
-		// ヘッドショット判定（ボーン名が "head" の場合）
-		if (HitBone == FName("head"))
-		{
-			FinalDamage *= 2.0f; // 2倍ダメージ
-		}
-	}
-
 	AttributeSet->SetHealth(AttributeSet->GetHealth() - FinalDamage);
 
 	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
@@ -634,7 +617,7 @@ bool AGWPlayer::TraceWall(FVector& OutWallNormal, bool RightSide)
 	FHitResult Hit;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-	bool trace = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	bool trace = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel4, Params);
 	if (trace)
 	{
 		if (Hit.Normal.Z < 0.2f)	// 水平壁だけ

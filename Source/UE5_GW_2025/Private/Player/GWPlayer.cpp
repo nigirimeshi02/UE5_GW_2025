@@ -863,13 +863,13 @@ bool AGWPlayer::CheckAddAmmo()
 {
 	if (CurrentWeapon->GetInfiniteAmmo())return false;
 
-	if (CurrentWeapon->GetMagazineSize() * 3 <= CurrentWeapon->GetSpareBullets())
-	{
-		if (CurrentWeapon->GetMagazineSize() <= CurrentWeapon->GetCurrentBullets())
-		{
-			return false;
-		}
-	}
+	//if (CurrentWeapon->GetMagazineSize() * 3 <= CurrentWeapon->GetSpareBullets())
+	//{
+	//	if (CurrentWeapon->GetMagazineSize() <= CurrentWeapon->GetCurrentBullets())
+	//	{
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }

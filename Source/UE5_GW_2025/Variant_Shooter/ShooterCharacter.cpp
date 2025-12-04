@@ -200,7 +200,7 @@ void AShooterCharacter::AddWeaponClass(const TSubclassOf<AShooterWeapon>& Weapon
 void AShooterCharacter::OnWeaponActivated(AShooterWeapon* Weapon)
 {
 	// update the bullet counter
-	OnBulletCountUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetBulletCount());
+	OnBulletCountUpdated.Broadcast(Weapon->GetMagazineSize(), Weapon->GetCurrentBullets());
 
 	// set the character mesh AnimInstances
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());

@@ -53,8 +53,7 @@ void AShootingWeapon::BeginPlay()
 	PawnOwner = Cast<APawn>(GetOwner());
 
 	// マガジンを満タンにする
-	CurrentBullets = MagazineSize;
-	SpareBullets = MagazineSize * 3;
+	AddAmmo();
 
 	// マガジンをアタッチする
 	AttachMagazineMeshes();
@@ -152,6 +151,7 @@ void AShootingWeapon::Reload()
 
 	CurrentBullets = SpareBullets;
 
+	// 弾数無限ではないなら弾を消費する
 	if (!InfiniteAmmo)
 	{
 		SpareBullets = SpareBullets - (MagazineSize - tmp);
@@ -165,6 +165,20 @@ void AShootingWeapon::Reload()
 		{
 			CurrentBullets = MagazineSize;
 		}
+	}
+}
+
+void AShootingWeapon::AddAmmo()
+{
+	if (InfiniteAmmo)
+	{
+		CurrentBullets = MagazineSize;
+		SpareBullets = MagazineSize;
+	}
+	else
+	{
+		CurrentBullets = MagazineSize;
+		SpareBullets = MagazineSize * 3;
 	}
 }
 

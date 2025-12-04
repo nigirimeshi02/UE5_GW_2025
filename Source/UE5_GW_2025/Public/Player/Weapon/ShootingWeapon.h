@@ -172,6 +172,9 @@ public:
 	// リロード
 	void Reload();
 
+	// 弾薬の追加
+	void AddAmmo();
+
 protected:
 	// 発砲処理
 	virtual void Fire();
@@ -210,10 +213,10 @@ public:
 	int32 GetMagazineSize() const { return MagazineSize; };
 
 	// 予備のマガジン内の弾の数を取得
-	int32 GetBulletSpare()const { return SpareBullets; }
+	int32 GetSpareBullets()const { return SpareBullets; }
 
 	// 現在のマガジン内の弾の数を取得
-	int32 GetBulletCount() const { return CurrentBullets; }
+	int32 GetCurrentBullets() const { return CurrentBullets; }
 
 	// 弾数無限かどうか取得
 	bool GetInfiniteAmmo()const { return InfiniteAmmo; }

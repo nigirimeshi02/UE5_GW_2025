@@ -327,6 +327,18 @@ public:
 	// リロード
 	virtual void Reload()override;
 
+	// 武器を追加できるか確認
+	virtual bool CheckAddWeapon()override;
+
+	// 指定された武器を削除する
+	virtual bool RemoveWeapon(class AShootingWeapon* Weapon)override;
+
+	// 弾薬の追加
+	virtual void AddAmmo()override;
+
+	// 弾薬の追加ができるか確認する
+	virtual bool CheckAddAmmo() override;
+
 protected:
 	// 指定クラスの武器をすでに所持しているかを確認
 	AShootingWeapon* FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const;

@@ -74,6 +74,9 @@ void AShootingWeaponSymbol::OnOverlap(UPrimitiveComponent* OverlappedComponent, 
 	// 衝突相手が武器所持者かどうか判定
 	if (IShootingWeaponHolder* WeaponHolder = Cast<IShootingWeaponHolder>(OtherActor))
 	{
+		// 武器を追加できないなら終了する
+		if (!WeaponHolder->CheckAddWeapon())return;
+
 		// 武器クラスを付与
 		WeaponHolder->AddWeaponClass(WeaponClass);
 

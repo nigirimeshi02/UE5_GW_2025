@@ -294,23 +294,6 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
 	
-	// PointDamageEvent か RadialDamageEvent かを判別
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	{
-		const FPointDamageEvent* PointDamageEvent = (FPointDamageEvent*)&DamageEvent;
-
-		// ヒットしたボーン名を取得
-		FName HitBone = PointDamageEvent->HitInfo.BoneName;
-
-		UE_LOG(LogTemp, Log, TEXT("Hit Bone: %s"), *HitBone.ToString());
-
-		// ヘッドショット判定（ボーン名が "head" の場合）
-		if (HitBone == FName("head"))
-		{
-			FinalDamage *= 2.0f; // 2倍ダメージ
-		}
-	}
-
 	AttributeSet->SetHealth(AttributeSet->GetHealth() - FinalDamage);
 
 	UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
@@ -495,7 +478,7 @@ void AGWPlayer::DoReloadEnd(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsReload = false;
 
-	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetBulletSpare(), CurrentWeapon->GetInfiniteAmmo());
+	UpdateWeaponHUD(CurrentWeapon->GetCurrentBullets(), CurrentWeapon->GetSpareBullets(), CurrentWeapon->GetInfiniteAmmo());
 }
 
 void AGWPlayer::TryStartClimb()
@@ -634,7 +617,7 @@ bool AGWPlayer::TraceWall(FVector& OutWallNormal, bool RightSide)
 	FHitResult Hit;
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(this);
-	bool trace = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	bool trace = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_GameTraceChannel4, Params);
 	if (trace)
 	{
 		if (Hit.Normal.Z < 0.2f)	// 水平壁だけ
@@ -757,7 +740,7 @@ FVector AGWPlayer::GetWeaponTargetLocation()
 }
 
 void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
-{
+{		
 	// すでにこの武器を所有しているか確認
 	AShootingWeapon* OwnedWeapon = FindWeaponOfType(WeaponClass);
 
@@ -793,7 +776,7 @@ void AGWPlayer::AddWeaponClass(const TSubclassOf<AShootingWeapon>& WeaponClass)
 void AGWPlayer::OnWeaponActivated(AShootingWeapon* Weapon)
 {
 	// 弾数UIを更新
-	UpdateWeaponHUD(Weapon->GetBulletCount(), Weapon->GetBulletSpare(), Weapon->GetInfiniteAmmo());
+	UpdateWeaponHUD(Weapon->GetCurrentBullets(), Weapon->GetSpareBullets(), Weapon->GetInfiniteAmmo());
 
 	// AnimInstancesをセット
 	GetFirstPersonMesh()->SetAnimInstanceClass(Weapon->GetFirstPersonAnimInstanceClass());
@@ -813,7 +796,7 @@ void AGWPlayer::OnSemiWeaponRefire()
 void AGWPlayer::Reload()
 {
 	// 予備の弾がないならリロードしない
-	if (CurrentWeapon->GetBulletSpare() <= 0)
+	if (CurrentWeapon->GetSpareBullets() <= 0)
 	{
 		return;
 	}
@@ -825,6 +808,70 @@ void AGWPlayer::Reload()
 		IsAiming = false;
 		CurrentWeapon->Reload();
 	}
+}
+
+bool AGWPlayer::CheckAddWeapon()
+{
+	if (IsReload)return false;
+
+	if (OwnedWeapons.Num() >= 2)
+	{
+		if (!RemoveWeapon(CurrentWeapon))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool AGWPlayer::RemoveWeapon(AShootingWeapon* Weapon)
+{
+	if (Weapon == OwnedWeapons[0])return false;
+
+	// OwnedWeapons から削除
+	OwnedWeapons.Remove(Weapon);
+
+	// 現在装備中の武器なら解除
+	if (CurrentWeapon == Weapon)
+	{
+		CurrentWeapon->DeactivateWeapon();
+		CurrentWeapon = nullptr;
+
+		// 他に武器が残っていれば自動で切り替え
+		if (OwnedWeapons.Num() > 0)
+		{
+			CurrentWeapon = OwnedWeapons[0];
+			CurrentWeapon->ActivateWeapon();
+		}
+	}
+
+	// ワールドから削除（Actor を破棄）
+	Weapon->Destroy();
+
+	return true;
+}
+
+void AGWPlayer::AddAmmo()
+{
+	CurrentWeapon->AddAmmo();
+
+	UpdateWeaponHUD(CurrentWeapon->GetCurrentBullets(), CurrentWeapon->GetSpareBullets(), CurrentWeapon->GetInfiniteAmmo());
+}
+
+bool AGWPlayer::CheckAddAmmo()
+{
+	if (CurrentWeapon->GetInfiniteAmmo())return false;
+
+	if (CurrentWeapon->GetMagazineSize() * 3 <= CurrentWeapon->GetSpareBullets())
+	{
+		if (CurrentWeapon->GetMagazineSize() <= CurrentWeapon->GetCurrentBullets())
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 AShootingWeapon* AGWPlayer::FindWeaponOfType(TSubclassOf<AShootingWeapon> WeaponClass) const

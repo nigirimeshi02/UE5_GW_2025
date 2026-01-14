@@ -12,6 +12,7 @@
 #include "GameFramework/Pawn.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "Kismet/GameplayStatics.h"
 
 AShootingWeapon::AShootingWeapon()
 {
@@ -208,6 +209,16 @@ void AShootingWeapon::Fire()
 			MuzzleFlashRotation,
 			EAttachLocation::SnapToTargetIncludingScale,
 			true
+		);
+	}
+
+	// 銃声
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			FireSound,
+			MuzzleFlashLocation
 		);
 	}
 

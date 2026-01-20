@@ -136,6 +136,10 @@ protected:
 	// 武器の名前
 	UPROPERTY(EditAnywhere)
 	FName WeaponName;
+
+	// 銃声
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* FireSound;
 	
 public:	
 	// コンストラクタ

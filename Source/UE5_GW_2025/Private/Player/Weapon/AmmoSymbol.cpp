@@ -5,6 +5,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
 #include "Player/Weapon/ShootingWeaponHolder.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AAmmoSymbol::AAmmoSymbol()
@@ -48,6 +49,15 @@ void AAmmoSymbol::OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 		if (!WeaponHolder->CheckAddAmmo())return;
 
 		WeaponHolder->AddAmmo();
+
+		if (GetSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				GetSound,
+				GetActorLocation()
+			);
+		}
 
 		Destroy();
 	}

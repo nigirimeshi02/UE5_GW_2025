@@ -156,6 +156,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "ADS")
 	float ADSFOVInterpSpeed = 15.f;
 
+	// 死亡アニメーション
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	TObjectPtr<class UAnimMontage> DeathMontage;
+
+	// 壁走りのSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* WallRunSound;
+
+	// 壁のぼりのSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* ClimbSound;
+
+	// 死亡時のSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* DieSound;
+
 public:
 	// 向くべき回転値
 	FRotator TargetRotation;
@@ -192,6 +208,17 @@ public:
 
 	// デフォルトのFOV
 	float DefaultFOV = 90.f;
+
+	bool IsDying = false;
+	bool IsDeathCameraActive = false;
+	float DeathCamTimePassed = 0.0f;
+	float DeathCamDuration = 1.0f;
+	FVector DeathCamStart;
+	FVector DeathCamTarget;
+	FRotator DeathCamStartRot;
+	FRotator DeathCamTargetRot;
+
+	FTimerHandle RespawnTimerHandle;
 
 public:
 	// マガジン更新時のデリゲート
@@ -292,6 +319,18 @@ protected:
 
 	// ADS終了処理
 	void DoEndADS();
+
+	// 死亡処理
+	void OnDeath();
+
+	// 死亡時のカメラ演出開始処理
+	void DoStartDeathCamera();
+
+	// 死亡時のカメラ演出終了処理
+	void DoFinishDeathCamera();
+
+	// リスポーンするための処理
+	void Respawn();
 
 public:
 	// 武器のメッシュをキャラクターにアタッチする処理

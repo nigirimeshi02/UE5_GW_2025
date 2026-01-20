@@ -17,8 +17,12 @@ protected:
 	class USphereComponent* SphereCollision;
 
 	// 武器ピックアップの表示メッシュ
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* Mesh;
+
+	// 取得音
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* GetSound;
 	
 public:	
 	// コンストラクタ

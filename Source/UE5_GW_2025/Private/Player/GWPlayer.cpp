@@ -184,6 +184,26 @@ void AGWPlayer::Tick(float DeltaTime)
 	float TargetFOV = IsAiming ? ADSFOV : DefaultFOV;
 	float CurrentFOV = FMath::FInterpTo(FirstPersonCameraComponent->FieldOfView, TargetFOV, DeltaTime, ADSFOVInterpSpeed);
 	FirstPersonCameraComponent->SetFieldOfView(CurrentFOV);
+
+	if (IsDeathCameraActive)
+	{
+		DeathCamTimePassed += DeltaTime;
+		float Alpha = FMath::Clamp(DeathCamTimePassed / DeathCamDuration, 0.f, 1.f);
+
+		FVector NewDeathLoc = FMath::Lerp(DeathCamStart, DeathCamTarget, Alpha);
+		FRotator NewDeathRot = FMath::Lerp(DeathCamStartRot, DeathCamTargetRot, Alpha);
+
+		APlayerController* PC = Cast<APlayerController>(GetController());
+
+		FirstPersonCameraComponent->SetWorldLocation(NewDeathLoc);
+		PC->SetControlRotation(NewDeathRot);
+
+		
+		if (Alpha >= 1.f)
+		{
+			DoFinishDeathCamera();
+		}
+	}
 }
 
 void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -198,7 +218,7 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AGWPlayer::DoJumpEnd);
 
 		// 壁のぼり
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Ongoing, this, &AGWPlayer::TryStartClimb);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AGWPlayer::TryStartClimb);
 
 		// 移動
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGWPlayer::MoveInput);
@@ -285,7 +305,8 @@ void AGWPlayer::InitializeAbilities()
 
 float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	
+	if (IsDying)return 0;
+
 	float FinalDamage = Damage;
 
 	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
@@ -301,6 +322,16 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 	// HPがなくなった？
 	if (AttributeSet->GetHealth() <= 0.0f)
 	{
+		// 死亡時のSE再生
+		if (DieSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				DieSound,
+				GetActorLocation()
+			);
+		}
+
 		// 武器を無効にする
 		if (IsValid(CurrentWeapon))
 		{
@@ -326,8 +357,7 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 
 				UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 
-				// このキャラクターを破壊する
-				Destroy();
+				OnDeath();
 			}
 
 		}
@@ -502,8 +532,8 @@ void AGWPlayer::DoStartClimb(const FHitResult& Hit)
 	FVector WallNormal = Hit.Normal;
 	FVector ClimbStartLocation = GetCapsuleComponent()->GetComponentLocation();
 
-	// 壁の上端を仮定（Apex風：上方向へ100cm＋前方へ15cm）
-	FVector UpOffset = FVector::UpVector * 100.0f;
+	// 壁の上端を仮定（Apex風：上方向へ200cm＋前方へ15cm）
+	FVector UpOffset = FVector::UpVector * 200.0f;
 	FVector ForwardOffset = -WallNormal * 15.0f;
 	FVector ClimbEndLocation = ClimbStartLocation + UpOffset + ForwardOffset;
 
@@ -521,6 +551,17 @@ void AGWPlayer::DoStartClimb(const FHitResult& Hit)
 	{
 		PlayAnimMontage(ClimbMontage);
 	}
+
+	// 壁のぼりのSE再生
+	if (ClimbSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			ClimbSound,
+			GetActorLocation()
+		);
+	}
+
 	// スムーズに上へ移動
 	FLatentActionInfo LatentInfo;
 	LatentInfo.CallbackTarget = this;
@@ -578,6 +619,16 @@ bool AGWPlayer::CheckClimb(FHitResult& OutHit)
 void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 {
 	//if (IsWallRunning) return;
+
+	// 壁走りのSE再生
+	if (WallRunSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			WallRunSound,
+			GetActorLocation()
+		);
+	}
 
 	IsWallRunning = true;
 	RightWall = RightSide;
@@ -667,6 +718,85 @@ void AGWPlayer::DoEndADS()
 {
 	ADSAlpha = 0.0f;
 	IsAiming = false;
+}
+
+void AGWPlayer::OnDeath()
+{
+	// 多重実行防止
+	if (IsDeathCameraActive) return;
+
+	IsDying = true;
+
+	// 1人称メッシュを完全に非表示
+	FirstPersonMesh->SetOwnerNoSee(true);
+	FirstPersonMesh->SetOnlyOwnerSee(false);
+
+	// 3人称メッシュを完全に表示
+	GetMesh()->SetOwnerNoSee(false);
+	GetMesh()->SetOnlyOwnerSee(false);
+	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::None;
+
+	// 移動・入力止める
+	DisableInput(nullptr);
+	GetCharacterMovement()->DisableMovement();
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+	}
+
+	// カメラを切り離す（画面が揺れないように）
+	FirstPersonCameraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	// カメラ演出開始
+	DoStartDeathCamera();
+}
+
+void AGWPlayer::DoStartDeathCamera()
+{
+	IsDeathCameraActive = true;
+	DeathCamTimePassed = 0.0f;
+
+	// 補間用の開始・目標値保存
+	DeathCamStart = FirstPersonCameraComponent->GetComponentLocation();
+	DeathCamStartRot = FirstPersonCameraComponent->GetComponentRotation();
+
+	// 少し後ろ＆上から見下ろす位置
+	DeathCamTarget = GetActorLocation()
+		- GetActorForwardVector() * 150.0f
+		+ FVector(.0f, 0, 300.0f);
+
+	DeathCamTargetRot = (GetActorLocation() - DeathCamTarget).Rotation();
+	DeathCamTargetRot.Pitch += 10.0f;
+
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+
+}
+
+void AGWPlayer::DoFinishDeathCamera()
+{
+	IsDeathCameraActive = false;
+
+	// 0.5秒後リスポーン
+	GetWorldTimerManager().SetTimer(
+		RespawnTimerHandle,
+		this,
+		&AGWPlayer::Respawn,
+		0.5f,
+		false
+	);
+}
+
+void AGWPlayer::Respawn()
+{
+	//FirstPersonMesh->SetOnlyOwnerSee(true);
+	//GetMesh()->SetOwnerNoSee(true);
+
+	Destroy();
 }
 
 void AGWPlayer::AttachWeaponMeshes(AShootingWeapon* Weapon)
@@ -863,13 +993,13 @@ bool AGWPlayer::CheckAddAmmo()
 {
 	if (CurrentWeapon->GetInfiniteAmmo())return false;
 
-	if (CurrentWeapon->GetMagazineSize() * 3 <= CurrentWeapon->GetSpareBullets())
-	{
-		if (CurrentWeapon->GetMagazineSize() <= CurrentWeapon->GetCurrentBullets())
-		{
-			return false;
-		}
-	}
+	//if (CurrentWeapon->GetMagazineSize() * 3 <= CurrentWeapon->GetSpareBullets())
+	//{
+	//	if (CurrentWeapon->GetMagazineSize() <= CurrentWeapon->GetCurrentBullets())
+	//	{
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }

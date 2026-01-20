@@ -168,6 +168,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
 	USoundBase* ClimbSound;
 
+	// 死亡時のSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* DieSound;
+
 public:
 	// 向くべき回転値
 	FRotator TargetRotation;

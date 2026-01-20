@@ -160,6 +160,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	TObjectPtr<class UAnimMontage> DeathMontage;
 
+	// 壁走りのSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* WallRunSound;
+
+	// 壁のぼりのSE
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* ClimbSound;
 
 public:
 	// 向くべき回転値

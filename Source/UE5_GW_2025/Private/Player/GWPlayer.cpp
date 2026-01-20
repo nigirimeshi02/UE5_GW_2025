@@ -218,7 +218,7 @@ void AGWPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AGWPlayer::DoJumpEnd);
 
 		// 壁のぼり
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Ongoing, this, &AGWPlayer::TryStartClimb);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AGWPlayer::TryStartClimb);
 
 		// 移動
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGWPlayer::MoveInput);
@@ -522,8 +522,8 @@ void AGWPlayer::DoStartClimb(const FHitResult& Hit)
 	FVector WallNormal = Hit.Normal;
 	FVector ClimbStartLocation = GetCapsuleComponent()->GetComponentLocation();
 
-	// 壁の上端を仮定（Apex風：上方向へ100cm＋前方へ15cm）
-	FVector UpOffset = FVector::UpVector * 100.0f;
+	// 壁の上端を仮定（Apex風：上方向へ200cm＋前方へ15cm）
+	FVector UpOffset = FVector::UpVector * 200.0f;
 	FVector ForwardOffset = -WallNormal * 15.0f;
 	FVector ClimbEndLocation = ClimbStartLocation + UpOffset + ForwardOffset;
 
@@ -541,6 +541,17 @@ void AGWPlayer::DoStartClimb(const FHitResult& Hit)
 	{
 		PlayAnimMontage(ClimbMontage);
 	}
+
+	// 壁のぼりのSE再生
+	if (ClimbSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			ClimbSound,
+			GetActorLocation()
+		);
+	}
+
 	// スムーズに上へ移動
 	FLatentActionInfo LatentInfo;
 	LatentInfo.CallbackTarget = this;
@@ -598,6 +609,16 @@ bool AGWPlayer::CheckClimb(FHitResult& OutHit)
 void AGWPlayer::DoStartWallRun(const FVector& WallNormal, bool RightSide)
 {
 	//if (IsWallRunning) return;
+
+	// 壁走りのSE再生
+	if (WallRunSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			WallRunSound,
+			GetActorLocation()
+		);
+	}
 
 	IsWallRunning = true;
 	RightWall = RightSide;

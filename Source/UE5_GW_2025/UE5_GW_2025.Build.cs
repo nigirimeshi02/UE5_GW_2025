@@ -23,7 +23,9 @@ public class UE5_GW_2025 : ModuleRules
 			"ChaosSolverEngine",     // ★ Chaos 破壊システム
 			"GeometryCollectionEngine", // ★ GeometryCollection コンポーネント
 			"FieldSystemEngine",      // ★ FieldSystem (RadialFalloffなど)
-			"Niagara"
+			"Niagara",
+            "Slate", 
+			"SlateCore"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

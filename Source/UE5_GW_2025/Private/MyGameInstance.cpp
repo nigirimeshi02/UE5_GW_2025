@@ -47,7 +47,7 @@ void UMyGameInstance::OnLevelLoaded()
     if (PC)
     {
         // ★タイトル画面（L_Title）への遷移だった場合の処理
-        if (PendingNextLevelName == FName("LVL_Title"))
+        if (PendingNextLevelName == FName("LVL_Title") || PendingNextLevelName == FName("LVL_GameOver"))
         {
             PC->SetGameplayUIVisible(false);      // ゲームUIを消す
             PC->bShowMouseCursor = true;          // マウスを表示

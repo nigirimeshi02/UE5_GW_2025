@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "Blueprint/UserWidget.h" 
 #include "GoalActor.generated.h"
 
 UCLASS()
@@ -26,6 +27,10 @@ protected:
 	// 次のレベルで探すべきPlayerStartのタグ
 	UPROPERTY(EditAnywhere, Category = "Transition")
 	FName TargetStartTag;
+
+	// --- UI用 ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LevelTransition")
+	TSubclassOf<UUserWidget> ResultWidgetClass;
 
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

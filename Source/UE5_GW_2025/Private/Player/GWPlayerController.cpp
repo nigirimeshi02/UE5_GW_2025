@@ -24,10 +24,12 @@ void AGWPlayerController::BeginPlay()
 	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
 	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
 	BulletCounterUI->AddToPlayerScreen(0);
+	BulletCounterUI->SetVisibility(ESlateVisibility::Collapsed);
 
 	// HPバーのUIウィジェットを作成し、画面に追加する
 	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
 	HPBarUI->AddToPlayerScreen(1);
+	HPBarUI->SetVisibility(ESlateVisibility::Collapsed);
 
 	// 現在の HP を取得
 	AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
@@ -126,4 +128,31 @@ void AGWPlayerController::OnHPBarUpdated(float MaxHP, float CurrentHP)
 {
 	// UIにHPを反映
 	HPBarUI->BP_UpdateHPBar(MaxHP, CurrentHP);
+}
+
+void AGWPlayerController::SetGameplayUIVisible(bool bVisible)
+{
+	// 表示なら HitTestInvisible (または Visible)、非表示なら Collapsed
+	ESlateVisibility NewVisibility = bVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+
+	if (BulletCounterUI)
+	{
+		BulletCounterUI->SetVisibility(NewVisibility);
+	}
+
+	if (HPBarUI)
+	{
+		HPBarUI->SetVisibility(NewVisibility);
+
+		// 表示に切り替わったタイミングで最新の値を反映
+		if (bVisible)
+		{
+			AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
+			if (GWPS)
+			{
+				UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+				HPBarUI->BP_UpdateHPBar(AttributeSet->GetMaxHealth(), AttributeSet->GetHealth());
+			}
+		}
+	}
 }

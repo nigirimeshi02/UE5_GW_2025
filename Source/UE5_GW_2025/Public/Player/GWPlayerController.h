@@ -69,4 +69,9 @@ protected:
 	UFUNCTION()
 	void OnHPBarUpdated(float MaxHP, float CurrentHP);
 
+public:
+	// UIを表示・初期化する関数
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void SetGameplayUIVisible(bool bVisible);
+
 };

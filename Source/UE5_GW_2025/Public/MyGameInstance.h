@@ -29,4 +29,6 @@ private:
 
     // “Ç‚İ‚İŠ®—¹‚Ü‚Å•Û‚µ‚Ä‚¨‚­ƒ^ƒO–¼
     FName PendingTargetTag;
+
+    FName PendingNextLevelName;
 };

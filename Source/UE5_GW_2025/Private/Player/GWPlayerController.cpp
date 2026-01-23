@@ -22,12 +22,18 @@ void AGWPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
-	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
-	BulletCounterUI->AddToPlayerScreen(0);
+	if (BulletCounterUIClass)
+	{
+		BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
+		BulletCounterUI->AddToPlayerScreen(0);
+	}
 
 	// HPバーのUIウィジェットを作成し、画面に追加する
-	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
-	HPBarUI->AddToPlayerScreen(1);
+	if (HPBarUIClass)
+	{
+		HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
+		HPBarUI->AddToPlayerScreen(1);
+	}
 
 	// 現在の HP を取得
 	AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);

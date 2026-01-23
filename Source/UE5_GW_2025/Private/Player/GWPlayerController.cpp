@@ -11,6 +11,7 @@
 #include "Abilities/PlayerAttributeSet.h"
 #include "Player/GWPlayerState.h"
 #include "Player/GWPlayerCameraManager.h"
+#include "MyGameInstance.h"
 
 AGWPlayerController::AGWPlayerController()
 {
@@ -22,18 +23,14 @@ void AGWPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
-	if (BulletCounterUIClass)
-	{
-		BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
-		BulletCounterUI->AddToPlayerScreen(0);
-	}
+	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
+	BulletCounterUI->AddToPlayerScreen(0);
+	BulletCounterUI->SetVisibility(ESlateVisibility::Collapsed);
 
 	// HPバーのUIウィジェットを作成し、画面に追加する
-	if (HPBarUIClass)
-	{
-		HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
-		HPBarUI->AddToPlayerScreen(1);
-	}
+	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
+	HPBarUI->AddToPlayerScreen(1);
+	HPBarUI->SetVisibility(ESlateVisibility::Collapsed);
 
 	// 現在の HP を取得
 	AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
@@ -101,24 +98,46 @@ void AGWPlayerController::OnPossess(APawn* InPawn)
 
 void AGWPlayerController::OnPawnDestroyed(AActor* DestroyedActor)
 {
-	// プレイヤースタートを探す
-	TArray<AActor*> ActorList;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), ActorList);
+	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
+	if (!GI) return;
 
-	if (ActorList.Num() > 0)
+	// 現在のステージに設定されているタグを取得
+	FName CurrentStageTag = GI->GetActiveTargetTag();
+
+	// 1. 全世界の PlayerStart を一旦取得
+	TArray<AActor*> AllPlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), AllPlayerStarts);
+
+	// 2. 現在のステージに属する（タグが一致する）PlayerStart だけを抽出
+	TArray<APlayerStart*> ValidStarts;
+	for (AActor* Actor : AllPlayerStarts)
 	{
-		// ランダムなプレイヤースタートを選択
-		AActor* RandomPlayerStart = ActorList[FMath::RandRange(0, ActorList.Num() - 1)];
+		APlayerStart* PS = Cast<APlayerStart>(Actor);
+		// MyGameInstance で指定したタグと一致するものだけを候補に入れる
+		if (PS && PS->PlayerStartTag == CurrentStageTag)
+		{
+			ValidStarts.Add(PS);
+		}
+	}
 
-		// 選ばれたプレイヤースタートの位置・回転を取得
-		const FTransform SpawnTransform = RandomPlayerStart->GetActorTransform();
+	// 3. 有効な開始地点が見つかった場合のみリスポーン
+	if (ValidStarts.Num() > 0)
+	{
+		// 現在のレベル内の候補からランダムに選択
+		APlayerStart* TargetStart = ValidStarts[FMath::RandRange(0, ValidStarts.Num() - 1)];
+		const FTransform SpawnTransform = TargetStart->GetActorTransform();
 
-		// プレイヤーキャラクターをスポーン
 		if (AGWPlayer* RespawnedCharacter = GetWorld()->SpawnActor<AGWPlayer>(CharacterClass, SpawnTransform))
 		{
-			// 新しいキャラクターを操作対象にする
 			Possess(RespawnedCharacter);
+
+			// 重要：カメラを新しいキャラクターに向ける
+			SetViewTarget(RespawnedCharacter);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No PlayerStart found with tag: %s"), *CurrentStageTag.ToString());
 	}
 }
 
@@ -132,4 +151,31 @@ void AGWPlayerController::OnHPBarUpdated(float MaxHP, float CurrentHP)
 {
 	// UIにHPを反映
 	HPBarUI->BP_UpdateHPBar(MaxHP, CurrentHP);
+}
+
+void AGWPlayerController::SetGameplayUIVisible(bool bVisible)
+{
+	// 表示なら HitTestInvisible (または Visible)、非表示なら Collapsed
+	ESlateVisibility NewVisibility = bVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+
+	if (BulletCounterUI)
+	{
+		BulletCounterUI->SetVisibility(NewVisibility);
+	}
+
+	if (HPBarUI)
+	{
+		HPBarUI->SetVisibility(NewVisibility);
+
+		// 表示に切り替わったタイミングで最新の値を反映
+		if (bVisible)
+		{
+			AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
+			if (GWPS)
+			{
+				UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+				HPBarUI->BP_UpdateHPBar(AttributeSet->GetMaxHealth(), AttributeSet->GetHealth());
+			}
+		}
+	}
 }

@@ -19,6 +19,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<class UUserWidget> LoadingWidgetClass;
 
+    FName GetActiveTargetTag() const { return PendingTargetTag; }
+
 private:
     UPROPERTY()
     class UUserWidget* ActiveLoadingWidget;
@@ -27,6 +29,16 @@ private:
     UFUNCTION()
     void OnLevelLoaded();
 
+
+public:
     // ì«Ç›çûÇ›äÆóπÇ‹Ç≈ï€éùÇµÇƒÇ®Ç≠É^ÉOñº
+    UPROPERTY(BlueprintReadOnly, Category = "LevelTransition")
     FName PendingTargetTag;
+
+    UPROPERTY(BlueprintReadOnly, Category = "LevelTransition")
+    FName PendingNextLevelName;
+
+
+    UPROPERTY(BlueprintReadOnly, Category = "LevelTransition")
+    FName PendingCurrentLevelName;
 };

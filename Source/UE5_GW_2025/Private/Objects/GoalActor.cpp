@@ -14,6 +14,10 @@ void AGoalActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Oth
 {
 	if (OtherActor && OtherActor->IsA(APawn::StaticClass()))
 	{
+		// --- スローモーション開始 ---
+		// 1.0 が等倍、0.1 なら 1/10 の速度になります
+		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.2f);
+
 		// 1. リザルトUIを表示
 		if (ResultWidgetClass)
 		{

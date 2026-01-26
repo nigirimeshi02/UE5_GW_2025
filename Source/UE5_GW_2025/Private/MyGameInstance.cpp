@@ -7,6 +7,9 @@
 
 void UMyGameInstance::ChangeLevelAsync(FName NextLevelName, FName CurrentLevelName, FName TargetTag)
 {
+    // --- ŽžŠÔ‚Ì—¬‚ê‚ðŒ³‚É–ß‚· ---
+    UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+
     PendingTargetTag = TargetTag;
     PendingNextLevelName = NextLevelName;
 

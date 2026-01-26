@@ -322,15 +322,6 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 	// HPがなくなった？
 	if (AttributeSet->GetHealth() <= 0.0f)
 	{
-		// 死亡時のSE再生
-		if (DieSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(
-				this,
-				DieSound,
-				GetActorLocation()
-			);
-		}
 
 		// 武器を無効にする
 		if (IsValid(CurrentWeapon))
@@ -353,6 +344,16 @@ float AGWPlayer::TakeDamage(float Damage, FDamageEvent const& DamageEvent, ACont
 			// 残機があるなら処理をする
 			if (GWGM->PlayerLife > 0)
 			{
+				// 死亡時のSE再生
+				if (DieSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						DieSound,
+						GetActorLocation()
+					);
+				}
+
 				AttributeSet->Initialize();
 
 				UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());

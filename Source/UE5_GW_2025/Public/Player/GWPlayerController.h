@@ -32,6 +32,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TSubclassOf<class UHPBar> HPBarUIClass;
 
+	// HPバーを表示する UI ウィジェットのクラス
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TSubclassOf<class UCompassWidget> CompassUIClass;
+
 	// ポーンに付与して「プレイヤー」であることを識別するためのタグ
 	UPROPERTY(EditAnywhere, Category = "Input")
 	FName PlayerPawnTag = FName("Player");
@@ -41,6 +45,9 @@ protected:
 
 	// 生成されたHPバー UI の参照
 	TObjectPtr<class UHPBar> HPBarUI;
+
+	// コンパス UI の参照
+	TObjectPtr<class UCompassWidget> CompassUI;
 
 public:
 	// コンストラクタ

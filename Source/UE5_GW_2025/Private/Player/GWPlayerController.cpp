@@ -8,6 +8,7 @@
 #include "Player/GWPlayer.h"
 #include "UI/BulletCounter.h"
 #include "UI/HPBar.h"
+#include "UI/CompassWidget.h"
 #include "Abilities/PlayerAttributeSet.h"
 #include "Player/GWPlayerState.h"
 #include "Player/GWPlayerCameraManager.h"
@@ -21,6 +22,11 @@ AGWPlayerController::AGWPlayerController()
 void AGWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// コンパスのUIウィジェットを生成し、画面に追加する
+	CompassUI = CreateWidget<UCompassWidget>(this, CompassUIClass);
+	CompassUI->AddToPlayerScreen(0);
+	CompassUI->SetVisibility(ESlateVisibility::Collapsed);
 
 	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
 	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
@@ -157,6 +163,11 @@ void AGWPlayerController::SetGameplayUIVisible(bool bVisible)
 {
 	// 表示なら HitTestInvisible (または Visible)、非表示なら Collapsed
 	ESlateVisibility NewVisibility = bVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed;
+
+	if (CompassUI)
+	{
+		CompassUI->SetVisibility(NewVisibility);
+	}
 
 	if (BulletCounterUI)
 	{

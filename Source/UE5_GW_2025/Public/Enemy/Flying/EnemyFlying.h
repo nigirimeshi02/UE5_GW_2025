@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,7 +5,8 @@
 #include "EnemyFlying.generated.h"
 
 /**
- * 
+ * 飛行する敵の基底クラス
+ * ターゲット（プレイヤー）に対して空中で接近し、一定距離でホバリングする基本動作を持つ
  */
 UCLASS()
 class UE5_GW_2025_API AEnemyFlying : public AEnemyBase
@@ -21,6 +20,15 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    // プレイヤーをロストしたとき呼ばれる
+    virtual void OnPlayerLost() override;
+
+    // --- 新規追加: 移動ロジック関数（継承クラスでオーバーライド可能にする） ---
+    // Bombクラスではここを書き換えて「突撃」を実装します
+    virtual void MoveToTarget(AActor* Target, float DeltaTime);
+
+
+    // --- パラメータ群 ---
 
     // ホバリングの揺れの強さと速さ
     UPROPERTY(EditAnywhere, Category = "Flying")
@@ -35,6 +43,7 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Flying")
     float FlySpeed = 300.0f; // 水平移動の速度
 
-    // プレイヤーをロストしたとき呼ばれる
-    virtual void OnPlayerLost() override;
+    // プレイヤーの手前で停止する距離
+    UPROPERTY(EditAnywhere, Category = "Flying")
+    float StopDistance = 600.0f;
 };

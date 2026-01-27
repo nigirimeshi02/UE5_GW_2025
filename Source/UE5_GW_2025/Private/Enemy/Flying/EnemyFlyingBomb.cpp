@@ -1,9 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Enemy/Flying/EnemyFlyingBomb.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+// これがないとクラッシュの原因になります
+#include "Enemy/EnemyStateMachineComponent.h" 
 
 AEnemyFlyingBomb::AEnemyFlyingBomb()
 {
@@ -12,171 +11,145 @@ AEnemyFlyingBomb::AEnemyFlyingBomb()
 
 void AEnemyFlyingBomb::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	HoverAmplitude = 3.0f;
-	HoverOscillationSpeed = 3.0f;
-	HoverHeight = 150.0f;
-	FlySpeed = 400.0f;
+    // 自爆ドローン用の動き設定
+    HoverAmplitude = 3.0f;
+    HoverOscillationSpeed = 5.0f; // 激しく揺れる
+    HoverHeight = 50.0f;          // プレイヤーの胴体高さを狙う
+    FlySpeed = 500.0f;            // 少し速く
 }
 
 void AEnemyFlyingBomb::Tick(float DeltaTime)
 {
-	if(CurrentHealth <= 0)
-	{
-		return; // 死亡している場合は何もしない
-	}
+    // 死んでいたら処理しない
+    if (CurrentHealth <= 0) return;
 
-	Super::Tick(DeltaTime);
+    // ★親クラスのTickを呼ぶことで、MoveToTarget（移動）とステート管理を行わせる
+    Super::Tick(DeltaTime);
 
-	// ターゲット（通常はプレイヤー）が存在するか確認
-	AActor* Target = StateMachine->GetTarget();
-	if (!Target) return;
+    // --- ここからは「自爆」固有のロジックのみ記述 ---
 
-	//if (Target)
-	//{
-	//	// 現在位置とターゲットの位置を取得
-	//	FVector CurrentLocation = GetActorLocation();
-	//	FVector TargetLocation = Target->GetActorLocation();
+    // カウントダウン処理
+    if (bIsCountingDown && !bHasExploded)
+    {
+        CurrentFuseTime -= DeltaTime;
 
-	//	// ターゲットとの距離を計算
-	//	float DistanceToTarget = FVector::Dist(CurrentLocation, TargetLocation);
+        // ここで「赤く点滅する」などの演出を入れると良い感じです
 
-	//	// 距離がExplosionRadius以下かチェック
-	//	if (DistanceToTarget <= ExplosionRadius && bHasExploded)
-	//	{
-	//		// 爆発処理を呼び出す
-	//		ExplodeAndDestroy();
-	//	}
-	//}
-
-	FVector CurrentLocation = GetActorLocation();
-	FVector TargetLocation = Target->GetActorLocation();
-	float DistanceToTarget = FVector::Dist(CurrentLocation, TargetLocation);
-
-	// --- 1. 距離チェックとカウントダウン開始 ---
-	if (DistanceToTarget <= ExplosionRadius)
-	{
-		// 範囲内に入ったら、カウントダウンを開始する
-		StartFuse();
-	}
-	// カウントダウンが始まったら、距離外に出てもリセットしないため、
-	// 以下の 'else if' ブロックを削除またはコメントアウトします。
-	/*
-	else if (bIsCountingDown)
-	{
-		// 範囲外に出たら、カウントダウンをリセットする（停止させないため削除）
-		// bIsCountingDown = false;
-		// FlySpeed = 400.0f;
-	}
-	*/
-
-
-	// --- 2. カウントダウン処理 ---
-	if (bIsCountingDown && !bHasExploded)
-	{
-		CurrentFuseTime -= DeltaTime;
-
-		if (CurrentFuseTime <= 0.0f)
-		{
-			// カウントがゼロになったら爆発
-			ExplodeAndDestroy();
-		}
-	}
-
-	//クラッシュします
+        if (CurrentFuseTime <= 0.0f)
+        {
+            ExplodeAndDestroy();
+        }
+    }
 }
 
-void AEnemyFlyingBomb::Die()
+// ★親クラスの移動ロジックを「突撃」用に完全に書き換える
+void AEnemyFlyingBomb::MoveToTarget(AActor* Target, float DeltaTime)
 {
-	Super::Die();
+    if (!Target) return;
 
-	// メッシュを非表示にする
-	USkeletalMeshComponent* MeshComp = GetMesh();
-	if (MeshComp)
-	{
-		MeshComp->SetVisibility(false, true);
-	}
+    FVector CurrentLocation = GetActorLocation();
+    FVector TargetLocation = Target->GetActorLocation();
 
-	// 爆発エフェクトやサウンドをここで再生可能
-	// ExplosionNiagaraSystemが設定されているか確認
-	if (ExplosionNiagaraSystem)
-	{
-		// 敵の現在地 (死亡した場所) に爆発エフェクトをスポーン
-		// SpawnSystemAtLocation は Niagara をワールド空間で一度再生するのに最適
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			ExplosionNiagaraSystem,
-			GetActorLocation(), // スポーン位置
-			GetActorRotation(), // 回転 (通常はデフォルトでOK)
-			FVector(1.0f),      // スケール
-			true                // オートデストロイ (再生後自動で破棄)
-		);
-	}
-}
+    // 1. 距離チェック（自爆スイッチの起動判定）
+    float Dist = FVector::Dist(CurrentLocation, TargetLocation);
+    if (Dist <= ExplosionRadius)
+    {
+        StartFuse();
+    }
 
-void AEnemyFlyingBomb::ExplodeAndDestroy()
-{
-	// --- 周囲に放射状ダメージを与える ---
-	float BaseDamage = 100.0f;
-	float DamageRadius = ExplosionRadius + 200.f;
+    // 2. 移動計算
+    FVector NewLocation = CurrentLocation;
 
-	// クラッシュ回避のための修正点: UDamageType::StaticClass() で有効なクラスを設定
-	TSubclassOf<UDamageType> DamageType0 = UDamageType::StaticClass();
+    // 高さ: 相手の高さへ直接向かう（親クラスのような上空待機はしない）
+    float TargetZ = TargetLocation.Z + HoverHeight;
+    // 上下移動も素早く追従させる
+    NewLocation.Z = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 5.0f);
 
-	// ApplyRadialDamage の呼び出し
-	UGameplayStatics::ApplyRadialDamage(
-		GetWorld(),
-		BaseDamage,
-		GetActorLocation(),
-		DamageRadius,
-		DamageType0,
-		TArray<AActor*>(),
-		this,
-		GetInstigatorController()
-	);
+    // 水平移動: 「停止距離」の判定を行わず、常にターゲットへ加算し続ける
+    FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, 0) - FVector(CurrentLocation.X, CurrentLocation.Y, 0);
+    FVector MoveDirection = HorizontalToTarget.GetSafeNormal();
 
-	UE_LOG(LogTemp, Warning, TEXT("EnemyFlyingBomb exploded at %s!"), *GetActorLocation().ToString());
+    // 突撃移動
+    NewLocation.X += MoveDirection.X * FlySpeed * DeltaTime;
+    NewLocation.Y += MoveDirection.Y * FlySpeed * DeltaTime;
 
-	// ----------------------------------------------------
-	// ステップ 2: 自身に高ダメージを与えて死亡処理をトリガー
-	// ----------------------------------------------------
+    // 3. 回転（常にターゲットを見る）
+    if (!HorizontalToTarget.IsNearlyZero())
+    {
+        FRotator TargetRot = HorizontalToTarget.Rotation();
+        SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, DeltaTime, 10.0f));
+    }
 
-	// **非常に大きなダメージ値** (敵の最大HPを確実に上回る値)
-	const float SuicideDamage = 1000.0f;
-
-	// ダメージタイプ（必要に応じて専用のUDamageTypeを定義する）
-	TSubclassOf<UDamageType> DamageType1 = UDamageType::StaticClass();
-
-	// UGameplayStatics::ApplyDamage を使用して自身にダメージを適用
-	UGameplayStatics::ApplyDamage(
-		this,					  // ダメージを受けるActor (自身)
-		SuicideDamage,			  // ダメージ量
-		GetInstigatorController(),// ダメージを与えたController (Instigatorが設定されていればそれを使用)
-		this,					  // ダメージを与えたActor (自身)
-		DamageType1				  // ダメージタイプ
-	);
-
-	bHasExploded = true; // 一度だけ爆発するようにフラグを更新
+    // 移動適用（Sweep=trueでめり込み防止）
+    SetActorLocation(NewLocation, true);
 }
 
 void AEnemyFlyingBomb::StartFuse()
 {
-	// 既に爆発済みか、カウントダウン中の場合は無視
-	if (bHasExploded || bIsCountingDown)
-	{
-		return;
-	}
+    if (bHasExploded || bIsCountingDown) return;
 
-	bIsCountingDown = true;
-	CurrentFuseTime = ExplosionFuseTime;
+    bIsCountingDown = true;
+    CurrentFuseTime = ExplosionFuseTime;
 
-	// 例: カウントダウン開始時に移動を停止する
-	//FlySpeed = 0.0f;
+    UE_LOG(LogTemp, Warning, TEXT("Bomb Fuse Started!"));
 
-	// 例: 警告音や点滅エフェクトを開始する
-	// PlayWarningSound();
-	// StartWarningLight(); 
+    // カウントダウン開始音などをここで再生すると効果的です
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("EnemyFlyingBomb fuse started! %f seconds to detonation."), ExplosionFuseTime);
+void AEnemyFlyingBomb::ExplodeAndDestroy()
+{
+    if (bHasExploded) return;
+    bHasExploded = true;
+
+    // 1. 周囲へのダメージ
+    UGameplayStatics::ApplyRadialDamage(
+        GetWorld(),
+        100.0f, // 爆発ダメージ
+        GetActorLocation(),
+        ExplosionRadius + 200.0f, // ダメージ範囲はトリガー範囲より少し広めに
+        UDamageType::StaticClass(),
+        TArray<AActor*>(), // 無視リスト
+        this,              // ダメージ発生源
+        GetInstigatorController()
+    );
+
+    UE_LOG(LogTemp, Warning, TEXT("BOOM! Enemy exploded."));
+
+    // 2. 自身を破壊するために特大ダメージを与える
+    // (Destroy()を直接呼ぶより、Die()を経由させてエフェクトなどを出すのが綺麗です)
+    UGameplayStatics::ApplyDamage(
+        this,
+        9999.0f,
+        GetInstigatorController(),
+        this,
+        UDamageType::StaticClass()
+    );
+}
+
+void AEnemyFlyingBomb::Die()
+{
+    // 親クラスのDieを呼び、スコア加算や衝突判定の無効化などを行わせる
+    Super::Die();
+
+    // メッシュを消す
+    SetActorHiddenInGame(true);
+    SetActorEnableCollision(false);
+
+    // 爆発エフェクト再生
+    if (ExplosionNiagaraSystem)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            ExplosionNiagaraSystem,
+            GetActorLocation(),
+            GetActorRotation(),
+            FVector(1.0f),
+            true
+        );
+    }
+
+    // 数秒後にActor自体を完全消去
+    SetLifeSpan(2.0f);
 }

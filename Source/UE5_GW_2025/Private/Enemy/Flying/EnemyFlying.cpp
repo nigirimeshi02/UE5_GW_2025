@@ -1,7 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Enemy/Flying/EnemyFlying.h"
+#include "Enemy/EnemyStateMachineComponent.h" 
 
 AEnemyFlying::AEnemyFlying()
 {
@@ -11,59 +9,77 @@ AEnemyFlying::AEnemyFlying()
 void AEnemyFlying::BeginPlay()
 {
     Super::BeginPlay();
-    
 }
 
 void AEnemyFlying::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    //if (!StateMachine || (StateMachine->GetCurrentState() != EEnemyState::Chase 
-    //                        && StateMachine->GetCurrentState() != EEnemyState::Attack))
-    //    return;
+    if (!StateMachine) return;
+    if (CurrentHealth <= 0) return;
 
     AActor* Target = StateMachine->GetTarget();
-    FVector CurrentLocation = GetActorLocation();
-    FVector NewLocation = CurrentLocation; // 最終的な位置をここに組み立てていく
-    if (Target) {
 
-        
-        FVector TargetLocation = Target->GetActorLocation();
-        
-
-        // --- 常にホバリングする（Z補間 + サイン波揺れ） ---
-        float TargetZ = TargetLocation.Z + HoverHeight;
-        float SmoothedZ = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 2.0f);
-
-        float Time = GetWorld()->GetTimeSeconds();
-        float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
-
-        NewLocation.Z = SmoothedZ + HoverOffset;
-
-        // --- 一定距離以上なら水平方向の移動・回転も行う ---
-        FVector ToTarget = TargetLocation - CurrentLocation;
-        if (/*ToTarget.Length() >= AcceptanceRadius*/true)
-        {
-            // 水平移動
-            FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, CurrentLocation.Z) - CurrentLocation;
-            FVector HorizontalDirection = HorizontalToTarget.GetSafeNormal();
-
-            NewLocation += HorizontalDirection * FlySpeed * DeltaTime;
-
-            // 回転も進行方向に
-            if (!HorizontalDirection.IsNearlyZero())
-            {
-                FRotator NewRotation = HorizontalDirection.Rotation();
-                SetActorRotation(NewRotation);
-            }
-        }
+    if (Target)
+    {
+        // ターゲットがいるなら移動ロジックにお任せ
+        MoveToTarget(Target, DeltaTime);
     }
     else
     {
-        // ターゲットがいない場合はホバリングのみ維持
+        // --- ターゲットがいない時の待機ホバリング処理 ---
+
+        // 時間経過を取得
         float Time = GetWorld()->GetTimeSeconds();
-        float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
-		NewLocation.Z = CurrentLocation.Z + HoverOffset;
+
+        // 1. 「今の瞬間のサイン波の高さ」と「次の瞬間のサイン波の高さ」の差分を計算します。
+        // これにより、現在位置を基準にして上下に動かすことができます。
+
+        float CurrentSine = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
+        float NextSine = FMath::Sin((Time + DeltaTime) * HoverOscillationSpeed) * HoverAmplitude;
+
+        // 差分（どれだけ動くか）
+        float ZOffset = NextSine - CurrentSine;
+
+        // ワールド座標でZ軸だけずらす
+        AddActorWorldOffset(FVector(0.f, 0.f, ZOffset), true);
+    }
+}
+
+void AEnemyFlying::MoveToTarget(AActor* Target, float DeltaTime)
+{
+    FVector CurrentLocation = GetActorLocation();
+    FVector TargetLocation = Target->GetActorLocation();
+    FVector NewLocation = CurrentLocation;
+
+    // 1. 高さ（Z軸）の制御
+    // ターゲットの頭上(HoverHeight)を基準位置にする
+    float TargetZ = TargetLocation.Z + HoverHeight;
+    float SmoothedZ = FMath::FInterpTo(CurrentLocation.Z, TargetZ, DeltaTime, 2.0f);
+
+    // ここでは絶対位置を指定するので、Sine波をそのまま足す
+    float Time = GetWorld()->GetTimeSeconds();
+    float HoverOffset = FMath::Sin(Time * HoverOscillationSpeed) * HoverAmplitude;
+
+    NewLocation.Z = SmoothedZ + HoverOffset;
+
+    // 2. 水平移動
+    FVector HorizontalToTarget = FVector(TargetLocation.X, TargetLocation.Y, 0) - FVector(CurrentLocation.X, CurrentLocation.Y, 0);
+    float Distance2D = HorizontalToTarget.Size();
+
+    if (Distance2D > StopDistance)
+    {
+        FVector HorizontalDirection = HorizontalToTarget.GetSafeNormal();
+        NewLocation.X += HorizontalDirection.X * FlySpeed * DeltaTime;
+        NewLocation.Y += HorizontalDirection.Y * FlySpeed * DeltaTime;
+    }
+
+    // 3. 回転
+    if (!HorizontalToTarget.IsNearlyZero())
+    {
+        FRotator TargetRotation = HorizontalToTarget.Rotation();
+        FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, DeltaTime, 5.0f);
+        SetActorRotation(NewRotation);
     }
 
     SetActorLocation(NewLocation, true);
@@ -75,14 +91,6 @@ void AEnemyFlying::OnPlayerLost()
     {
         StateMachine->ChangeState(EEnemyState::Idle);
         StateMachine->SetTarget(nullptr);
+        StateMachine->ChangeState(EEnemyState::Search);
     }
-
-    // 高度を維持する場合（落下防止）
-    FVector CurrentLocation = GetActorLocation();
-    SetActorLocation(FVector(CurrentLocation.X, CurrentLocation.Y, CurrentLocation.Z));
-
-    // 状態遷移：探し中
-    StateMachine->ChangeState(EEnemyState::Search);
-    
 }
-

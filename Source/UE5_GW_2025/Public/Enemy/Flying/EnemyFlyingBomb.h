@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,50 +5,56 @@
 #include "EnemyFlyingBomb.generated.h"
 
 /**
- * 
+ * 自爆型の飛行敵
+ * ターゲットに向かって一直線に突撃し、一定距離で起爆カウントダウンを開始する
  */
 UCLASS()
 class UE5_GW_2025_API AEnemyFlyingBomb : public AEnemyFlying
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	AEnemyFlyingBomb();
+    AEnemyFlyingBomb();
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
+    virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
+    virtual void Die() override;
 
-	virtual void Die() override;
+    // ★重要: 親クラスの移動ロジックを上書きして「突撃」挙動にする
+    virtual void MoveToTarget(AActor* Target, float DeltaTime) override;
 
-	/** 爆発するプレイヤーとの距離（半径） */
-	UPROPERTY(EditAnywhere, Category = "Bomb")
-	float ExplosionRadius = 400.0f; // 爆発トリガーとなる距離
+    // --- パラメータ ---
 
-	/** 一度だけ爆発したかどうか */
-	UPROPERTY(VisibleAnywhere, Category = "Bomb") // VisibleAnywhereに変更
-		bool bHasExploded = false; // フラグ名を変更し、エディタで確認可能に
+    /** 爆発トリガーとなる距離 */
+    UPROPERTY(EditAnywhere, Category = "Bomb")
+    float ExplosionRadius = 200.0f; // 確実に当てるため少し狭め、あるいは広めに調整
 
-	// --- カウントダウン用プロパティ ---
+    /** カウントダウン時間 */
+    UPROPERTY(EditAnywhere, Category = "Bomb")
+    float ExplosionFuseTime = 2.0f;
 
-	/** 爆発までのカウントダウン時間 */
-	UPROPERTY(EditAnywhere, Category = "Bomb")
-	float ExplosionFuseTime = 3.0f; // 爆発までの時間（例: 2.0秒）
+    /** カウントダウン中の現在時間 */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bomb")
+    float CurrentFuseTime = 0.0f;
 
-	/** 現在のカウントダウンの残り時間 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb")
-	float CurrentFuseTime = 0.0f;
+    /** カウントダウン中か？ */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bomb")
+    bool bIsCountingDown = false;
 
-	/** カウントダウンが開始されたかどうか */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bomb")
-	bool bIsCountingDown = false;
+    /** 爆発済みフラグ */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bomb")
+    bool bHasExploded = false;
 
-	/** 爆発処理を実行し、自身に高ダメージを与える */
-	void ExplodeAndDestroy();
+    // --- 関数 ---
 
-	/** カウントダウン開始時の初期処理 */
-	void StartFuse();
+    /** 爆発処理（ダメージ発生＋自身死亡） */
+    void ExplodeAndDestroy();
 
-	UPROPERTY(EditDefaultsOnly, Category = "FX")
-	class UNiagaraSystem* ExplosionNiagaraSystem;
+    /** カウントダウン開始 */
+    void StartFuse();
+
+    /** 爆発エフェクト */
+    UPROPERTY(EditDefaultsOnly, Category = "FX")
+    class UNiagaraSystem* ExplosionNiagaraSystem;
 };

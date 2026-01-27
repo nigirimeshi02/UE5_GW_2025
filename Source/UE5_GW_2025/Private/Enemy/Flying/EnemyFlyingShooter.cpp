@@ -43,7 +43,7 @@ void AEnemyFlyingShooter::TryShootAtPlayer()
     AActor* Target = StateMachine->GetTarget();
     if (!Target || !BulletClass) return;
 
-    FVector MuzzleLoc = GetActorLocation() + GetActorForwardVector() * 150.0f;
+    FVector MuzzleLoc = GetActorLocation() + GetActorForwardVector() * 300.f;
     FRotator MuzzleRot = (Target->GetActorLocation() - GetActorLocation()).Rotation();
 
     GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLoc, MuzzleRot);

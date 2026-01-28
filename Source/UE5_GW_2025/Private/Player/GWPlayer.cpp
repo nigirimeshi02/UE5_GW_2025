@@ -162,12 +162,6 @@ void AGWPlayer::Tick(float DeltaTime)
 
 		GetCharacterMovement()->Velocity = WallRunDirection * WallRunSpeed; // スピード感
 
-		// カメラを壁方向にスムーズに向ける
-		//FRotator ControlRot = Controller->GetControlRotation();
-		//FRotator TargetRot = ControlRot;
-		//TargetRot.Yaw = WallRunTargetYaw;
-		//FRotator NewRot = FMath::RInterpTo(ControlRot, TargetRot, DeltaTime, WallRunLookInterpSpeed);
-		//Controller->SetControlRotation(NewRot);
 	}
 	else if (WallRunCooldownTimer <= 0.f)
 	{

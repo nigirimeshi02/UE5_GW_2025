@@ -43,63 +43,59 @@ void UMyGameInstance::ChangeLevelAsync(FName NextLevelName, FName CurrentLevelNa
 
 void UMyGameInstance::OnLevelLoaded()
 {
-    APlayerStart* TargetStart = nullptr;
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
     AGWPlayerController* PC = Cast<AGWPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+    APlayerStart* TargetStart = nullptr;
+
+    // 1. まず、指定されたタグを持つ PlayerStart を「最初に」検索する
+    for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+    {
+        if (It && It->PlayerStartTag == PendingTargetTag)
+        {
+            TargetStart = *It;
+            break;
+        }
+    }
 
     if (PC)
     {
-        // ★タイトル画面（L_Title）への遷移だった場合の処理
+        // ★タイトル画面やゲームオーバーへの遷移
         if (PendingNextLevelName == FName("LVL_Title") || PendingNextLevelName == FName("LVL_GameOver"))
         {
-            PC->SetGameplayUIVisible(false);      // ゲームUIを消す
-            PC->bShowMouseCursor = true;          // マウスを表示
-            PC->SetInputMode(FInputModeUIOnly()); // 操作をUI専用にする
+            PC->SetGameplayUIVisible(false);
+            PC->bShowMouseCursor = true;
+            PC->SetInputMode(FInputModeUIOnly());
         }
-        // ★通常のステージへの遷移だった場合の処理
+        // ★通常のステージへの遷移
         else
         {
-            PC->SetGameplayUIVisible(true);       // ゲームUIを出す
-            PC->bShowMouseCursor = false;         // マウスを消す
-            PC->SetInputMode(FInputModeGameOnly()); // 操作をゲーム（キャラ）に戻す
+            PC->SetGameplayUIVisible(true);
+            PC->bShowMouseCursor = false;
+            PC->SetInputMode(FInputModeGameOnly());
 
-            // カメラと位置の修正（前回記述した内容）
-            if (PlayerPawn && TargetStart)
+            // 2. プレイヤーを移動させ、向きを固定する
+            if (TargetStart && PlayerPawn)
             {
-                PlayerPawn->SetActorLocationAndRotation(TargetStart->GetActorLocation(), TargetStart->GetActorRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+                // ポーンの位置と向きをセット
+                PlayerPawn->SetActorLocationAndRotation(
+                    TargetStart->GetActorLocation(),
+                    TargetStart->GetActorRotation(),
+                    false,
+                    nullptr,
+                    ETeleportType::TeleportPhysics
+                );
+
+                // 【重要】コントローラーの向きを PlayerStart の向きに合わせる
+                // これをしないと、カメラの向きが前のレベルのままになります
+                PC->SetControlRotation(TargetStart->GetActorRotation());
+
+                // カメラの注視点を更新
                 PC->SetViewTarget(PlayerPawn);
             }
         }
     }
 
-    //APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0); // 追加
-
-    // 1. 指定されたタグを持つ PlayerStart を検索 (前回と同じ)
-    for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
-    {
-        APlayerStart* FoundStart = *It;
-        if (FoundStart && FoundStart->PlayerStartTag == PendingTargetTag)
-        {
-            TargetStart = FoundStart;
-            break;
-        }
-    }
-
-    // 2. プレイヤーの移動とカメラのリセット
-    if (TargetStart && PlayerPawn && PC)
-    {
-        // 位置を移動
-        PlayerPawn->SetActorLocationAndRotation(
-            TargetStart->GetActorLocation(),
-            TargetStart->GetActorRotation(),
-            false,
-            nullptr,
-            ETeleportType::TeleportPhysics
-        );
-
-    }
-
-    // 3. ロード画面を非表示 (前回と同じ)
+    // 3. ロード画面を非表示
     if (ActiveLoadingWidget)
     {
         ActiveLoadingWidget->RemoveFromParent();

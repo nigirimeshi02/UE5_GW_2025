@@ -6,7 +6,6 @@
 #include "Enemy/Walking/EnemyWalkingShooter.h"
 #include "EnemyWalkingShooterSniper.generated.h"
 
-// デバッグ線描画クラスはShippingで使わないため、必要であれば残すが今回はメッシュで代用
 class AMyLineDrawer;
 
 /**
@@ -23,7 +22,7 @@ public:
 	AEnemyWalkingShooterSniper();
 
 protected:
-	// BeginPlay() で親クラスのプロパティを上書き設定
+	// BeginPlay() でアセットの適用とパラメータ設定を行う
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
@@ -34,7 +33,7 @@ private:
 	// --- スナイパー固有の特性 ---
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
-	float SniperFireRange = 3000.0f;
+	float SniperFireRange = 6000.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
 	float SniperFireInterval = 5.0f;
@@ -59,9 +58,20 @@ private:
 	// レーザー再表示を許可する関数
 	void AllowLaserDisplay();
 
-	// --- 【追加】レーザー表示用コンポーネント ---
+	// --- 【修正】レーザー表示用アセット指定変数 ---
 
-	// レーザーの実体となるメッシュ（円柱）
+	// ★重要: Shipping対策。C++でパスを書かず、BPでこの変数に「Cylinder」を指定する
+	UPROPERTY(EditDefaultsOnly, Category = "Sniper Setup")
+	TObjectPtr<UStaticMesh> LaserBaseMesh;
+
+	// ★重要: Shipping対策。BPでこの変数に「M_SniperLaser」を指定する
+	UPROPERTY(EditDefaultsOnly, Category = "Sniper Setup")
+	TObjectPtr<UMaterialInterface> LaserBaseMaterial;
+
+
+	// --- レーザー表示用コンポーネント ---
+
+	// レーザーの実体となるコンポーネント
 	UPROPERTY(VisibleAnywhere, Category = "Sniper Combat|Visuals")
 	TObjectPtr<UStaticMeshComponent> LaserMeshComponent;
 
@@ -73,7 +83,7 @@ public:
 	// エイム予測レーザービームを表示（更新）する関数
 	void ShowAimPredictor(float DeltaTime);
 
-	// デバッグ用ラインドロワー（必要に応じて残すが、本番表示にはLaserMeshComponentを使用）
+	// デバッグ用ラインドロワー（必要に応じて残す）
 	UPROPERTY(Transient)
 	TObjectPtr<AMyLineDrawer> LineDrawer;
 };

@@ -2,10 +2,8 @@
 #include "Enemy/EnemyAIController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "Enemy/EnemyStateMachineComponent.h" 
-
+#include "Enemy/EnemyStateMachineComponent.h"
 
 // もしLineDrawerを使うならインクルード
 #include "Enemy/MyLineDrawer.h"
@@ -15,73 +13,75 @@ AEnemyWalkingShooterSniper::AEnemyWalkingShooterSniper()
 	// 親クラスの設定
 	PrimaryActorTick.bCanEverTick = true;
 
-	// --- 1. Create Laser Mesh Component ---
+	// --- 1. Laser Mesh Component の作成 ---
 	LaserMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LaserMesh"));
 	LaserMeshComponent->SetupAttachment(RootComponent);
 
-	// Disable collision and shadows
+	// コリジョンと影を無効化（ゲームプレイに影響させないため）
 	LaserMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	LaserMeshComponent->SetCastShadow(false);
 
-	// --- 2. Load Cylinder Mesh ---
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMeshAsset(TEXT("/Engine/BasicShapes/Cylinder"));
-	if (CylinderMeshAsset.Succeeded())
-	{
-		LaserMeshComponent->SetStaticMesh(CylinderMeshAsset.Object);
-	}
+	// ★重要: ここにあった ConstructorHelpers::FObjectFinder は全て削除しました。
+	// これにより、パッケージ化時にパスが見つからないエラーや、アセットのロード失敗を防ぎます。
+	// メッシュとマテリアルの設定は BeginPlay で行います。
 
-	// --- 3. Load Custom Laser Material ---
-	// ここにコピーしたパスを貼り付けます (例: /Game/Materials/M_SniperLaser)
-	// パス末尾の .M_SniperLaser という拡張子のような部分は削除しても機能しますが、そのままでもOKです
-	static ConstructorHelpers::FObjectFinder<UMaterial> LaserMat(TEXT("/Script/Engine.Material'/Game/Enemy/M_SniperLaser.M_SniperLaser'"));
-
-	// もし自作マテリアルが見つからない場合のフォールバック（念のため標準マテリアル）
-	static ConstructorHelpers::FObjectFinder<UMaterial> BasicMat(TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
-
-	if (LaserMat.Succeeded())
-	{
-		LaserMeshComponent->SetMaterial(0, LaserMat.Object);
-	}
-	else if (BasicMat.Succeeded())
-	{
-		LaserMeshComponent->SetMaterial(0, BasicMat.Object);
-	}
-
-	// Hide by default
+	// デフォルトは非表示
 	LaserMeshComponent->SetVisibility(false);
 }
+
 void AEnemyWalkingShooterSniper::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// --- アセットの適用 (Shipping対策) ---
+	if (LaserMeshComponent)
+	{
+		// ブループリントで設定されたメッシュ (Cylinder) を適用
+		if (LaserBaseMesh)
+		{
+			LaserMeshComponent->SetStaticMesh(LaserBaseMesh);
+		}
+		else
+		{
+			// 設定忘れ防止のログ
+			UE_LOG(LogTemp, Warning, TEXT("Sniper: LaserBaseMesh is not set in Blueprint! Laser will not show."));
+		}
+
+		// ブループリントで設定されたマテリアル (M_SniperLaser) を適用
+		if (LaserBaseMaterial)
+		{
+			LaserMeshComponent->SetMaterial(0, LaserBaseMaterial);
+
+			// 色を変えるためにダイナミックインスタンスを作成
+			LaserMaterialInstance = LaserMeshComponent->CreateAndSetMaterialInstanceDynamic(0);
+		}
+	}
+
+	// --- レーザーの発光設定 ---
+	if (LaserMaterialInstance)
+	{
+		// パラメータ名 "Color" を赤色（高輝度）に設定
+		// RGB値を 1.0 以上にすることで Unlit マテリアルを発光(Bloom)させる
+		LaserMaterialInstance->SetVectorParameterValue(FName("Color"), FLinearColor(50.0f, 0.0f, 0.0f, 1.0f));
+	}
 
 	// --- スナイパーパラメータの設定 ---
 	FireRange = SniperFireRange;
 	BurstCount = SniperBurstCount;
 	FireCycleInterval = SniperFireCycleInterval - BurstInterval;
 
-	// --- 4. Configure Laser Color/Glow ---
-	if (LaserMeshComponent && LaserMeshComponent->GetMaterial(0))
-	{
-		LaserMaterialInstance = LaserMeshComponent->CreateAndSetMaterialInstanceDynamic(0);
-		if (LaserMaterialInstance)
-		{
-			// エディタで作ったパラメータ名 "Color" を指定
-			// RGBの値を大きくするほど光ります (例: 50, 0, 0 はかなり眩しい赤)
-			LaserMaterialInstance->SetVectorParameterValue(FName("Color"), FLinearColor(50.0f, 0.0f, 0.0f, 1.0f));
-		}
-	}
-
-	// コントローラーの視界設定
+	// --- AI視界設定 ---
 	if (Controller)
 	{
 		AEnemyAIController* EnemyAI = Cast<AEnemyAIController>(Controller);
 		if (EnemyAI)
 		{
-			EnemyAI->SetSightRadius(3000.f);
+			EnemyAI->SetSightRadius(SniperFireRange);
 		}
 	}
 
-	// デバッグ用LineDrawer (必要なら残す)
+	// --- デバッグ用LineDrawer (必要なら) ---
+	// Shippingでは通常Spawnされないように条件分岐するか、そのままでも可
 	if (GetWorld())
 	{
 		LineDrawer = GetWorld()->SpawnActor<AMyLineDrawer>(AMyLineDrawer::StaticClass());
@@ -119,6 +119,7 @@ void AEnemyWalkingShooterSniper::TryShootAtPlayer()
 	float PitchOffset = FMath::FRandRange(-0.3f, 0.3f);
 	FRotator SpreadRotation = LookAt + FRotator(PitchOffset, YawOffset, 0.f);
 
+	// 親クラスの BulletClass が設定されているか確認
 	if (BulletClass)
 	{
 		FActorSpawnParameters SpawnParams;
@@ -141,6 +142,10 @@ void AEnemyWalkingShooterSniper::TryShootAtPlayer()
 			false
 		);
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Sniper: BulletClass is NONE! Check Blueprint settings."));
+	}
 }
 
 void AEnemyWalkingShooterSniper::AllowLaserDisplay()
@@ -152,10 +157,10 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 {
 	AActor* Target = StateMachine->GetTarget();
 
-	// ターゲットがいない、または発射直後のクールダウン中は非表示
-	if (!Target || !bCanShowLaser || !LaserMeshComponent)
+	// ターゲットがいない、または発射直後のクールダウン中、またはコンポーネントが無効なら非表示
+	if (!Target || !bCanShowLaser || !LaserMeshComponent || !LaserMeshComponent->GetStaticMesh())
 	{
-		LaserMeshComponent->SetVisibility(false);
+		if (LaserMeshComponent) LaserMeshComponent->SetVisibility(false);
 		return;
 	}
 
@@ -169,8 +174,7 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 	FVector BeamVector = TargetLocation - StartLocation;
 	float Distance = BeamVector.Size();
 
-	// 射程距離より遠い場合や、壁に当たった場合などはここで制限可能
-	// 今回はシンプルにターゲットまで引く
+	// 射程距離より遠い場合の制限
 	if (Distance > FireRange)
 	{
 		BeamVector = BeamVector.GetSafeNormal() * FireRange;
@@ -178,7 +182,7 @@ void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 		TargetLocation = StartLocation + BeamVector;
 	}
 
-	// --- B. メッシュの変形 (ここが重要) ---
+	// --- B. メッシュの変形 ---
 
 	// メッシュを表示
 	LaserMeshComponent->SetVisibility(true);

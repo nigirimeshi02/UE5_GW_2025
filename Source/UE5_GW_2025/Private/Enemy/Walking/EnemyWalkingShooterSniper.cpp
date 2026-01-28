@@ -1,53 +1,77 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Enemy/Walking/EnemyWalkingShooterSniper.h"
 #include "Enemy/EnemyAIController.h"
 #include "Components/CapsuleComponent.h"
-#include "Particles/ParticleSystemComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Enemy/EnemyStateMachineComponent.h" 
 
-#include "NiagaraComponent.h"
-#include "NiagaraSystem.h"
 
+// もしLineDrawerを使うならインクルード
 #include "Enemy/MyLineDrawer.h"
-
-// (プロジェクト構造に応じてインクルードパスを調整してください)
 
 AEnemyWalkingShooterSniper::AEnemyWalkingShooterSniper()
 {
-	// コンストラクタでは、主にコンポーネントの初期化などを行う
-	// プロパティのデフォルト値を設定
-	// 親クラスのPrimaryActorTick.bCanEverTick = true; は継承される
+	// 親クラスの設定
+	PrimaryActorTick.bCanEverTick = true;
 
-	// 継承したプロパティのデフォルト値を上書きしても良いが、
-	// BeginPlayで設定する方が、エディタでの変更を無視して強制的に設定しやすい
+	// --- 1. Create Laser Mesh Component ---
+	LaserMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LaserMesh"));
+	LaserMeshComponent->SetupAttachment(RootComponent);
+
+	// Disable collision and shadows
+	LaserMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LaserMeshComponent->SetCastShadow(false);
+
+	// --- 2. Load Cylinder Mesh ---
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMeshAsset(TEXT("/Engine/BasicShapes/Cylinder"));
+	if (CylinderMeshAsset.Succeeded())
+	{
+		LaserMeshComponent->SetStaticMesh(CylinderMeshAsset.Object);
+	}
+
+	// --- 3. Load Custom Laser Material ---
+	// ここにコピーしたパスを貼り付けます (例: /Game/Materials/M_SniperLaser)
+	// パス末尾の .M_SniperLaser という拡張子のような部分は削除しても機能しますが、そのままでもOKです
+	static ConstructorHelpers::FObjectFinder<UMaterial> LaserMat(TEXT("/Script/Engine.Material'/Game/Enemy/M_SniperLaser.M_SniperLaser'"));
+
+	// もし自作マテリアルが見つからない場合のフォールバック（念のため標準マテリアル）
+	static ConstructorHelpers::FObjectFinder<UMaterial> BasicMat(TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+
+	if (LaserMat.Succeeded())
+	{
+		LaserMeshComponent->SetMaterial(0, LaserMat.Object);
+	}
+	else if (BasicMat.Succeeded())
+	{
+		LaserMeshComponent->SetMaterial(0, BasicMat.Object);
+	}
+
+	// Hide by default
+	LaserMeshComponent->SetVisibility(false);
 }
-
 void AEnemyWalkingShooterSniper::BeginPlay()
 {
-	// 親クラスのBeginPlayを呼び出す
 	Super::BeginPlay();
 
-	// 親クラスの戦闘プロパティをスナイパーの特性に合わせて上書き
-	// これにより、親クラスの射撃ロジックがスナイパー仕様になる
+	// --- スナイパーパラメータの設定 ---
+	FireRange = SniperFireRange;
+	BurstCount = SniperBurstCount;
+	FireCycleInterval = SniperFireCycleInterval - BurstInterval;
 
-	// 射程距離をスナイパー用に設定
-	FireRange = SniperFireRange; 
+	// --- 4. Configure Laser Color/Glow ---
+	if (LaserMeshComponent && LaserMeshComponent->GetMaterial(0))
+	{
+		LaserMaterialInstance = LaserMeshComponent->CreateAndSetMaterialInstanceDynamic(0);
+		if (LaserMaterialInstance)
+		{
+			// エディタで作ったパラメータ名 "Color" を指定
+			// RGBの値を大きくするほど光ります (例: 50, 0, 0 はかなり眩しい赤)
+			LaserMaterialInstance->SetVectorParameterValue(FName("Color"), FLinearColor(50.0f, 0.0f, 0.0f, 1.0f));
+		}
+	}
 
-	// 射撃間隔（FireInterval, BurstCount, FireCycleInterval）をスナイパー用に設定
-	// ※親クラスのロジックでは、バースト射撃（BurstFire）でタイマーを管理しているため、
-	//   FireIntervalの代わりに BurstCount と FireCycleInterval を調整します。
-	
-	// 1バーストの発射数を1に設定（単発）
-	BurstCount = SniperBurstCount; // デフォルトは3発だが、スナイパーは1発
-
-	// 1バースト後の待機時間（次の射撃までの時間）を長く設定
-	FireCycleInterval = SniperFireCycleInterval - BurstInterval; 
-	// (BurstIntervalは連射間隔で、単発の場合はほぼ無視できるため、簡略化しています)
-
-	// UE_LOG(LogTemp, Log, TEXT("Sniper initialized: Range=%f, FireCycle=%f"), FireRange, FireCycleInterval);
-
-	// コントローラーを取得
+	// コントローラーの視界設定
 	if (Controller)
 	{
 		AEnemyAIController* EnemyAI = Cast<AEnemyAIController>(Controller);
@@ -57,6 +81,7 @@ void AEnemyWalkingShooterSniper::BeginPlay()
 		}
 	}
 
+	// デバッグ用LineDrawer (必要なら残す)
 	if (GetWorld())
 	{
 		LineDrawer = GetWorld()->SpawnActor<AMyLineDrawer>(AMyLineDrawer::StaticClass());
@@ -66,56 +91,54 @@ void AEnemyWalkingShooterSniper::BeginPlay()
 void AEnemyWalkingShooterSniper::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	//UE_LOG(LogTemp, Log, TEXT("Sniper initialized: Range=%f, FireCycle=%f"), FireRange, FireCycleInterval);
-	// エイム予測レーザービームの表示更新
-	if (StateMachine->GetCurrentState() == EEnemyState::Attack)
+
+	// 攻撃状態のときのみレーザー更新処理を行う
+	if (StateMachine && StateMachine->GetCurrentState() == EEnemyState::Attack)
 	{
 		ShowAimPredictor(DeltaTime);
 	}
+	else
+	{
+		// 攻撃状態でないなら隠す
+		if (LaserMeshComponent) LaserMeshComponent->SetVisibility(false);
+	}
 }
 
-// Tick, TryShootAtPlayer, StartFireCycle, BurstFire などは
-// 親クラス AEnemyWalkingShooter の実装をそのまま使用します。
-// TryShootAtPlayer のブレ（ランダム Yaw/Pitch Offset）を調整したい場合は、
-// TryShootAtPlayer をオーバーライドしてブレの値を小さくする必要があります。
-
-
-// 例：精度を上げるためにTryShootAtPlayerをオーバーライドする場合
 void AEnemyWalkingShooterSniper::TryShootAtPlayer()
 {
-	if (!StateMachine || StateMachine->GetCurrentState() != EEnemyState::Attack)
-	{
-		return;
-	}
+	if (!StateMachine || StateMachine->GetCurrentState() != EEnemyState::Attack) return;
 
 	AActor* Target = StateMachine->GetTarget();
-	if (!Target || FVector::Dist(GetActorLocation(), Target->GetActorLocation()) > FireRange) 
-	{
-		return;
-	}
+	if (!Target || FVector::Dist(GetActorLocation(), Target->GetActorLocation()) > FireRange) return;
 
+	// ターゲットへの方向
 	FRotator LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
 
-	// スナイパーは精度が高いのでブレを小さくする（例：±0.5度）
-	float YawOffset = FMath::FRandRange(-0.5f, 0.5f); 
+	// スナイパー特有の微小なブレ
+	float YawOffset = FMath::FRandRange(-0.5f, 0.5f);
 	float PitchOffset = FMath::FRandRange(-0.3f, 0.3f);
-
 	FRotator SpreadRotation = LookAt + FRotator(PitchOffset, YawOffset, 0.f);
 
 	if (BulletClass)
 	{
 		FActorSpawnParameters SpawnParams;
+		// 弾の発射
 		GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
-		UE_LOG(LogTemp, Log, TEXT("EnemySniper: Fired!"));
 
-		// 発射後にレーザーを非表示にし、タイマーを開始
+		// --- 発射時の処理: レーザーを消す ---
 		bCanShowLaser = false;
+		if (LaserMeshComponent)
+		{
+			LaserMeshComponent->SetVisibility(false);
+		}
+
+		// クールダウン後に再表示するためのタイマー設定
 		GetWorldTimerManager().SetTimer(
 			TH_LaserCooldown,
 			this,
 			&AEnemyWalkingShooterSniper::AllowLaserDisplay,
-			LaserHideDuration, // 1.0f (LaserHideDuration) 秒後に呼び出す
-			false // ループしない
+			LaserHideDuration,
+			false
 		);
 	}
 }
@@ -128,58 +151,51 @@ void AEnemyWalkingShooterSniper::AllowLaserDisplay()
 void AEnemyWalkingShooterSniper::ShowAimPredictor(float DeltaTime)
 {
 	AActor* Target = StateMachine->GetTarget();
-	if (!Target)
+
+	// ターゲットがいない、または発射直後のクールダウン中は非表示
+	if (!Target || !bCanShowLaser || !LaserMeshComponent)
 	{
+		LaserMeshComponent->SetVisibility(false);
 		return;
 	}
 
-	// ----------------------------------------------------
-	// A. 狙いの方向の計算 (TryShootAtPlayerと類似)
-	// ----------------------------------------------------
+	// --- A. 座標計算 ---
+	FVector StartLocation = MuzzleLocation; // 銃口の位置 (Tick毎に更新されている前提)
 
-	// スナイパーは移動しないため、常にターゲットの方向を向く
+	// ターゲットの位置
+	FVector TargetLocation = Target->GetActorLocation();
 
-	// 回転テスト
-	// 水平方向のベクトル
-	FVector ToTarget = Target->GetActorLocation() - GetActorLocation();
-	FRotator LookAt;
-	if (!ToTarget.IsNearlyZero())
+	// 銃口からターゲットへのベクトル
+	FVector BeamVector = TargetLocation - StartLocation;
+	float Distance = BeamVector.Size();
+
+	// 射程距離より遠い場合や、壁に当たった場合などはここで制限可能
+	// 今回はシンプルにターゲットまで引く
+	if (Distance > FireRange)
 	{
-		// ターゲット方向の回転
-		FRotator TargetRotation = ToTarget.Rotation();
-
-		// 現在の回転を滑らかに補間
-		FRotator NewRotation = FMath::RInterpTo(
-			GetActorRotation(),
-			TargetRotation,
-			DeltaTime,
-			5.0f // ← 回転速度（大きいほど速く向く）
-		);
-
-		LookAt = NewRotation;
+		BeamVector = BeamVector.GetSafeNormal() * FireRange;
+		Distance = FireRange;
+		TargetLocation = StartLocation + BeamVector;
 	}
 
-	// 予測線はブレさせず、クリーンな中心線を出すことが多い
-	// ここではシンプルにターゲット方向を使用します。
-	LookAt = (Target->GetActorLocation() - GetActorLocation()).Rotation();
-	FRotator AimRotation = LookAt;
-	FVector Direction = AimRotation.Vector();
-	UE_LOG(LogTemp, Log, TEXT("EnemySniperDirection: %f %f %f!"), Direction.X, Direction.Y, Direction.Z);
+	// --- B. メッシュの変形 (ここが重要) ---
 
-	// ----------------------------------------------------
-	// B. ビームパーティクルの設定
-	// ----------------------------------------------------
+	// メッシュを表示
+	LaserMeshComponent->SetVisibility(true);
 
-	// ビームの開始位置 (Source)
-	// MuzzleLocation は Pawn 側のプロパティですが、ここでは MuzzleLocation をローカル座標に変換して使用します
-	FVector StartLocation = MuzzleLocation; // ワールド座標
+	// 1. 位置: 円柱の中心を「始点と終点の中間」に置く
+	FVector MidPoint = StartLocation + (BeamVector * 0.5f);
+	LaserMeshComponent->SetWorldLocation(MidPoint);
 
-	// ビームの終了位置 (Target)
-	FVector EndLocation = StartLocation + Direction * FireRange;
+	// 2. 回転: 円柱はZ軸(高さ方向)に伸びている形状なので、Z軸をビーム方向に向ける
+	FRotator LookAtRot = FRotationMatrix::MakeFromZ(BeamVector).Rotator();
+	LaserMeshComponent->SetWorldRotation(LookAtRot);
 
-	if (bCanShowLaser) 
-	{
-		LineDrawer->DrawPermanentLine(StartLocation, EndLocation, FLinearColor::Red, 5.f);
-	}
+	// 3. スケール: 
+	// Z軸 = 長さ (エンジンのデフォルト円柱は高さ100単位なので、距離/100倍する)
+	// X,Y軸 = レーザーの太さ
+	float BeamThickness = 0.05f; // 太さ調整 (0.05 = 5%)
+	float BeamLengthScale = Distance / 100.0f;
+
+	LaserMeshComponent->SetWorldScale3D(FVector(BeamThickness, BeamThickness, BeamLengthScale));
 }
-

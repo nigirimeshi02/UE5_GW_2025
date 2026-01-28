@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Enemy/Walking/EnemyWalkingShooter.h"
-
 #include "EnemyWalkingShooterSniper.generated.h"
 
-
+// デバッグ線描画クラスはShippingで使わないため、必要であれば残すが今回はメッシュで代用
 class AMyLineDrawer;
 
 /**
  * 敵スナイパー。射程が長く、発射間隔が長い。
+ * Shippingビルドでも見えるレーザーサイト（メッシュ変形）を実装。
  */
 UCLASS()
 class UE5_GW_2025_API AEnemyWalkingShooterSniper : public AEnemyWalkingShooter
@@ -30,27 +30,20 @@ protected:
 
 	virtual void TryShootAtPlayer() override;
 
-
-
 private:
-	// スナイパー固有の特性（親クラスのプロパティを上書きするための値）
-	// 注意: これらの値はBeginPlayで親クラスのUPROPERTYに設定されます。
+	// --- スナイパー固有の特性 ---
 
-	// スナイパーの射程距離
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
-	float SniperFireRange = 3000.0f; // 例：非常に長い射程
+	float SniperFireRange = 3000.0f;
 
-	// スナイパーの発射間隔（秒）
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
-	float SniperFireInterval = 5.0f; // 例：長い間隔
+	float SniperFireInterval = 5.0f;
 
-	// スナイパーのバースト発射数 (スナイパーなので基本は1発)
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
 	int32 SniperBurstCount = 1;
 
-	// スナイパーのバーストごとの待機時間 (FireCycleInterval)
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
-	float SniperFireCycleInterval = 5.0f; // FireIntervalと合わせるか、若干短くして待機時間に使う
+	float SniperFireCycleInterval = 5.0f;
 
 	// 発射後の非表示時間を管理するタイマーハンドル
 	FTimerHandle TH_LaserCooldown;
@@ -66,12 +59,21 @@ private:
 	// レーザー再表示を許可する関数
 	void AllowLaserDisplay();
 
-public:
+	// --- 【追加】レーザー表示用コンポーネント ---
 
-	// **【追加】** エイム予測レーザービームを表示する関数
+	// レーザーの実体となるメッシュ（円柱）
+	UPROPERTY(VisibleAnywhere, Category = "Sniper Combat|Visuals")
+	TObjectPtr<UStaticMeshComponent> LaserMeshComponent;
+
+	// レーザーの色を動的に変えるためのマテリアルインスタンス
+	UPROPERTY(Transient)
+	TObjectPtr<UMaterialInstanceDynamic> LaserMaterialInstance;
+
+public:
+	// エイム予測レーザービームを表示（更新）する関数
 	void ShowAimPredictor(float DeltaTime);
 
-	UPROPERTY(Transient) // ゲーム実行中に動的に作成/破棄されるアクターなので Transient が適切
+	// デバッグ用ラインドロワー（必要に応じて残すが、本番表示にはLaserMeshComponentを使用）
+	UPROPERTY(Transient)
 	TObjectPtr<AMyLineDrawer> LineDrawer;
-
 };

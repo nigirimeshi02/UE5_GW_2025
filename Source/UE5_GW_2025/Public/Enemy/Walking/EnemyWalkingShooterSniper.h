@@ -29,6 +29,7 @@ protected:
 
 	virtual void TryShootAtPlayer() override;
 
+
 private:
 	// --- スナイパー固有の特性 ---
 
@@ -86,4 +87,5 @@ public:
 	// デバッグ用ラインドロワー（必要に応じて残す）
 	UPROPERTY(Transient)
 	TObjectPtr<AMyLineDrawer> LineDrawer;
+
 };

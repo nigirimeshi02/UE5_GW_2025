@@ -71,6 +71,14 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     float WidgetDisplayDuration = 0.1f;
 
+    // îÌÉ_ÉÅÅ[ÉWâπ
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundBase* HitSound;
+
+	// éÄñSâπ
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+	class USoundBase* DeathSound;
+
 public:
     virtual void Tick(float DeltaTime) override;
 

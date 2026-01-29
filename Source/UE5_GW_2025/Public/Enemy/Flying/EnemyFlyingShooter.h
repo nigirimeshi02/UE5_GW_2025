@@ -38,6 +38,13 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     float RotationSpeed = 5.0f;
 
+    // ”š”­Žž‚ÌSE
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundBase* ShootSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundAttenuation* ShootAttenuationSettings;
+
 private:
     FTimerHandle FireTimerHandle;
 };

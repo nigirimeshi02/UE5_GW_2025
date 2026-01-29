@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h" 
 #include "Enemy/EnemyStateMachineComponent.h" 
+#include "Kismet/GameplayStatics.h"
 
 AEnemyFlyingShooter::AEnemyFlyingShooter()
 {
@@ -141,4 +142,21 @@ void AEnemyFlyingShooter::TryShootAtPlayer()
 
     // 弾を発射
     GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLoc, BulletRotation, SpawnParams);
+
+	// 発射音を再生
+    if (ShootSound)
+    {
+        //UGameplayStatics::PlaySoundAtLocation(this, ShootSound, GetActorLocation());
+
+        UGameplayStatics::PlaySoundAtLocation(
+            this,
+            ShootSound,
+            GetActorLocation(),
+            GetActorRotation(),
+            0.5f,
+            1.0f,
+            0.0f,
+            ShootAttenuationSettings // ★ここに減衰アセットを渡す
+        );
+	}
 }

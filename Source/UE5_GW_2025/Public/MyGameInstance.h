@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/AudioComponent.h"
 #include "MyGameInstance.generated.h"
 
 UCLASS()
@@ -41,4 +42,19 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "LevelTransition")
     FName PendingCurrentLevelName;
+
+protected:
+    // 現在再生中のオーディオコンポーネントを保持
+    UPROPERTY()
+    TObjectPtr<UAudioComponent> CurrentAudioComponent;
+
+    // ★設定用: レベル名とBGM（SoundCue / Wave）の対応リスト
+    // エディタ側で「Stage1」→「BGM_Forest」のように設定します
+    UPROPERTY(EditDefaultsOnly, Category = "Audio")
+    TMap<FName, USoundBase*> LevelBGMMap;
+
+public:
+    // BGMを再生・切り替える関数
+    UFUNCTION(BlueprintCallable, Category = "Audio")
+    void PlayLevelBGM(FName LevelName);
 };

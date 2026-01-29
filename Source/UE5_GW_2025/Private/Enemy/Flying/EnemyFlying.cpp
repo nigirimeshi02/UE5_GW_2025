@@ -1,14 +1,28 @@
 #include "Enemy/Flying/EnemyFlying.h"
 #include "Enemy/EnemyStateMachineComponent.h" 
+#include "Components/AudioComponent.h"
 
 AEnemyFlying::AEnemyFlying()
 {
     PrimaryActorTick.bCanEverTick = true;
+
+    // オーディオコンポーネントの作成
+    HoverAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("HoverAudioComponent"));
+    HoverAudioComponent->SetupAttachment(RootComponent);
+    HoverAudioComponent->bAutoActivate = false; // 最初はオフにするか、BeginPlayで制御
+    HoverAudioComponent->bAllowSpatialization = true;
 }
 
 void AEnemyFlying::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (HoverSoundCue)
+    {
+        HoverAudioComponent->SetSound(HoverSoundCue);
+        HoverAudioComponent->SetVolumeMultiplier(BaseHoverVolume);
+        HoverAudioComponent->Play();
+    }
 }
 
 void AEnemyFlying::Tick(float DeltaTime)
@@ -44,6 +58,16 @@ void AEnemyFlying::Tick(float DeltaTime)
         // ワールド座標でZ軸だけずらす
         AddActorWorldOffset(FVector(0.f, 0.f, ZOffset), true);
     }
+}
+
+void AEnemyFlying::Die()
+{
+    Super::Die();
+    // ホバリング音を停止
+    if (HoverAudioComponent)
+    {
+        HoverAudioComponent->Stop();
+	}
 }
 
 void AEnemyFlying::MoveToTarget(AActor* Target, float DeltaTime)

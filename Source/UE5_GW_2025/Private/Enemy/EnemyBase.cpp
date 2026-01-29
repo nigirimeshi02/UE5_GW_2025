@@ -229,6 +229,12 @@ float AEnemyBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent
         }
     }
 
+	// 被ダメージ音を再生
+    if (HitSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+	}
+
     return DamageAmount;
 }
 
@@ -262,6 +268,20 @@ void AEnemyBase::Die()
 
     // 死亡イベントを通知(EnemyManagerに通知)
     OnEnemyDied.Broadcast();
+
+	// 死亡音を再生
+    if (DeathSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(
+            this,
+            DeathSound,
+            GetActorLocation(),
+            GetActorRotation(),
+            1.0f, // VolumeMultiplier (音量)
+            1.5f, // ★PitchMultiplier (ここを変えると速度も変わる)
+            0.0f // StartTime
+        );
+    }
 
     // 一定時間後に消滅
     SetLifeSpan(5.0f);

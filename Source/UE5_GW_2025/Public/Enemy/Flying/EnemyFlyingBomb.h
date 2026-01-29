@@ -57,4 +57,31 @@ protected:
     /** 爆発エフェクト */
     UPROPERTY(EditDefaultsOnly, Category = "FX")
     class UNiagaraSystem* ExplosionNiagaraSystem;
+
+
+protected:
+    // BP側でSEを設定できるようにする変数
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundBase* BeepSound;
+
+    // 点滅・音の速さの最小/最大間隔（秒）
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    float MaxBeepInterval = 1.0f; // 開始時のゆっくりな間隔
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    float MinBeepInterval = 0.05f; // 爆発直前の速い間隔
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void OnBeepUpdate();
+
+    // 爆発時のSE
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundBase* ExplosionSound;
+
+    // ★追加: 減衰設定アセット（ここに追加）
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundAttenuation* BombAttenuationSettings;
+
+private:
+    float BeepTimer = 0.0f; // タイマー管理用
 };

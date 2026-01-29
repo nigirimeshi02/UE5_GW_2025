@@ -53,4 +53,11 @@ protected:
     int32 BurstCount = 3;                // 1バーストの発射数
     float BurstInterval = 0.2f;          // 連射間隔（秒）
     float FireCycleInterval = 1.0f;      // バーストごとの待機時間
+
+	// 発射時のSE
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundBase* ShootSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects|Sound")
+    class USoundAttenuation* ShootAttenuationSettings;
 };

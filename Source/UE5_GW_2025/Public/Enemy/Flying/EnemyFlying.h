@@ -20,6 +20,8 @@ protected:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+	virtual void Die() override;
+
     // プレイヤーをロストしたとき呼ばれる
     virtual void OnPlayerLost() override;
 
@@ -46,4 +48,16 @@ protected:
     // プレイヤーの手前で停止する距離
     UPROPERTY(EditAnywhere, Category = "Flying")
     float StopDistance = 600.0f;
+
+    // ホバリング音を再生するためのコンポーネント
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Audio")
+    UAudioComponent* HoverAudioComponent;
+
+    // エディタで設定するサウンドアセット
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    USoundBase* HoverSoundCue;
+
+    // 基本の音量
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+    float BaseHoverVolume = 1.0f;
 };

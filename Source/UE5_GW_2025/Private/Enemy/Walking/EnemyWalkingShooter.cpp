@@ -115,6 +115,23 @@ void AEnemyWalkingShooter::TryShootAtPlayer()
         GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
 
         UE_LOG(LogTemp, Log, TEXT("EnemyShooter: Fired!"));
+
+		// 発射音を再生
+        if (ShootSound)
+        {
+            //UGameplayStatics::PlaySoundAtLocation(this, ShootSound, GetActorLocation());
+
+            UGameplayStatics::PlaySoundAtLocation(
+                this,
+                ShootSound,
+                GetActorLocation(),
+                GetActorRotation(),
+                0.5f,
+                1.0f,
+                0.0f,
+                ShootAttenuationSettings // ★ここに減衰アセットを渡す
+            );
+		}
     }
 }
 

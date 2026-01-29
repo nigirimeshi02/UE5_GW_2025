@@ -35,7 +35,43 @@ void AEnemyFlyingBomb::Tick(float DeltaTime)
     {
         CurrentFuseTime -= DeltaTime;
 
-        // ここで「赤く点滅する」などの演出を入れると良い感じです
+        // --- ここから音のロジック ---
+        if (BeepSound)
+        {
+            BeepTimer += DeltaTime;
+
+            // 残り時間に基づいて現在の間隔を計算 (Lerpを使用)
+            // CurrentFuseTime が ExplosionFuseTime(初期値) に近いほど MaxInterval
+            // 0 に近いほど MinInterval になるように補完します
+            float Alpha = FMath::Clamp(CurrentFuseTime / ExplosionFuseTime, 0.0f, 1.0f);
+            float CurrentInterval = FMath::Lerp(MinBeepInterval, MaxBeepInterval, Alpha);
+
+            if (BeepTimer >= CurrentInterval)
+            {
+                // 音を再生
+                // 修正前: UGameplayStatics::PlaySoundAtLocation(this, BeepSound, GetActorLocation());
+
+                // 修正後: 引数をすべて指定し、最後に減衰設定を渡します
+                UGameplayStatics::PlaySoundAtLocation(
+                    this,
+                    BeepSound,
+                    GetActorLocation(),
+                    GetActorRotation(),
+                    0.5f, // 音量倍率
+                    1.0f, // ピッチ倍率
+                    0.0f, // 開始時間オフセット
+                    BombAttenuationSettings // ★ここに減衰アセットを渡す
+                );
+
+                // タイマーリセット
+                BeepTimer = 0.0f;
+
+                // 【ヒント】ここでBP側に「今ピッと言ったよ！」という通知を送ると、
+                // BPの点滅タイムラインと完全に同期させることができます。
+                OnBeepUpdate();
+            }
+        }
+        // --- ここまで ---
 
         if (CurrentFuseTime <= 0.0f)
         {
@@ -147,6 +183,24 @@ void AEnemyFlyingBomb::Die()
             GetActorRotation(),
             FVector(1.0f),
             true
+        );
+    }
+
+    // --- 爆発SEの再生 ---
+    if (ExplosionSound)
+    {
+        // 修正前: UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
+
+        // 修正後
+        UGameplayStatics::PlaySoundAtLocation(
+            this,
+            ExplosionSound,
+            GetActorLocation(),
+            GetActorRotation(),
+            0.5f,
+            1.0f,
+            0.0f,
+            BombAttenuationSettings // ★ここに減衰アセットを渡す
         );
     }
 

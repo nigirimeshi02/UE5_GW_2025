@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Enemy/EnemyStateMachineComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // もしLineDrawerを使うならインクルード
 #include "Enemy/MyLineDrawer.h"
@@ -125,6 +126,23 @@ void AEnemyWalkingShooterSniper::TryShootAtPlayer()
 		FActorSpawnParameters SpawnParams;
 		// 弾の発射
 		GetWorld()->SpawnActor<AActor>(BulletClass, MuzzleLocation, SpreadRotation, SpawnParams);
+
+		// 発射音を再生
+		if (ShootSound)
+		{
+			//UGameplayStatics::PlaySoundAtLocation(this, ShootSound, GetActorLocation());
+
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				ShootSound,
+				GetActorLocation(),
+				GetActorRotation(),
+				0.5f,
+				1.0f,
+				0.0f,
+				ShootAttenuationSettings // ★ここに減衰アセットを渡す
+			);
+		}
 
 		// --- 発射時の処理: レーザーを消す ---
 		bCanShowLaser = false;

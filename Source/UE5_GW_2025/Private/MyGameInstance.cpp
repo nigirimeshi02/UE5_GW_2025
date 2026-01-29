@@ -4,6 +4,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "EngineUtils.h"
 #include "Player/GWPlayerController.h"
+#include "Components/AudioComponent.h"
 
 void UMyGameInstance::ChangeLevelAsync(FName NextLevelName, FName CurrentLevelName, FName TargetTag)
 {
@@ -60,7 +61,8 @@ void UMyGameInstance::OnLevelLoaded()
     if (PC)
     {
         // ★タイトル画面やゲームオーバーへの遷移
-        if (PendingNextLevelName == FName("LVL_Title") || PendingNextLevelName == FName("LVL_GameOver"))
+        if (PendingNextLevelName == FName("LVL_Title") || PendingNextLevelName == FName("LVL_GameOver")
+            || PendingNextLevelName == FName("LVL_GameClear"))
         {
             PC->SetGameplayUIVisible(false);
             PC->bShowMouseCursor = true;
@@ -95,10 +97,51 @@ void UMyGameInstance::OnLevelLoaded()
         }
     }
 
+    // ★追加: 読み込んだレベル名に合わせてBGMを切り替える
+    // "L_Stage1" のような完全な名前ではなく、必要に応じて短縮名を使うなど工夫してください
+    PlayLevelBGM(PendingNextLevelName);
+
     // 3. ロード画面を非表示
     if (ActiveLoadingWidget)
     {
         ActiveLoadingWidget->RemoveFromParent();
         ActiveLoadingWidget = nullptr;
+    }
+}
+
+void UMyGameInstance::PlayLevelBGM(FName LevelName)
+{
+    // 1. マップから再生すべき曲を探す
+    USoundBase* NextBGM = nullptr;
+    if (LevelBGMMap.Contains(LevelName))
+    {
+        NextBGM = LevelBGMMap[LevelName];
+    }
+
+    // 2. すでに何か再生中の場合
+    if (CurrentAudioComponent)
+    {
+        // もし「今流れている曲」と「次に流す曲」が同じなら、何もしない（途切れさせない）
+        if (CurrentAudioComponent->Sound == NextBGM && CurrentAudioComponent->IsPlaying())
+        {
+            return;
+        }
+
+        // 違う曲なら、前の曲をフェードアウト（2秒かけて消す）
+        CurrentAudioComponent->FadeOut(2.0f, 0.0f);
+        CurrentAudioComponent = nullptr;
+    }
+
+    // 3. 次の曲があるなら再生
+    if (NextBGM)
+    {
+        // 新しいオーディオコンポーネントを生成（まだ再生はしない）
+        CurrentAudioComponent = UGameplayStatics::CreateSound2D(this, NextBGM);
+
+        if (CurrentAudioComponent)
+        {
+            // フェードイン（0秒から2秒かけて音量を1.0にする）
+            CurrentAudioComponent->FadeIn(0.5f, 1.0f);
+        }
     }
 }

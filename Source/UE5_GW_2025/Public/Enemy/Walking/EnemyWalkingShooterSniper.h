@@ -43,7 +43,7 @@ private:
 	int32 SniperBurstCount = 1;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sniper Combat")
-	float SniperFireCycleInterval = 5.0f;
+	float SniperFireCycleInterval = 3.0f;
 
 	// 発射後の非表示時間を管理するタイマーハンドル
 	FTimerHandle TH_LaserCooldown;

@@ -25,16 +25,20 @@ protected:
 	TSubclassOf<class AGWPlayer> CharacterClass;
 
 	// 弾数を表示する UI ウィジェットのクラス
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UBulletCounter> BulletCounterUIClass;
 
 	// HPバーを表示する UI ウィジェットのクラス
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UHPBar> HPBarUIClass;
 
-	// HPバーを表示する UI ウィジェットのクラス
-	UPROPERTY(EditAnywhere, Category = "Input")
+	// コンパスを表示する UI ウィジェットのクラス
+	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UCompassWidget> CompassUIClass;
+
+	// クロスヘアを表示する UI ウィジェットのクラス
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<class UUserWidget> AimingUIClass;
 
 	// ポーンに付与して「プレイヤー」であることを識別するためのタグ
 	UPROPERTY(EditAnywhere, Category = "Input")
@@ -48,6 +52,9 @@ protected:
 
 	// コンパス UI の参照
 	TObjectPtr<class UCompassWidget> CompassUI;
+
+	// クロスヘア UI の参照
+	TObjectPtr<class UUserWidget> AimingUI;
 
 public:
 	// コンストラクタ

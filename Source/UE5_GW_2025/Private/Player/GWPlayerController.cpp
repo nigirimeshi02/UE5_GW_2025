@@ -23,20 +23,37 @@ void AGWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// コンパスのUIウィジェットを生成し、画面に追加する
-	CompassUI = CreateWidget<UCompassWidget>(this, CompassUIClass);
-	CompassUI->AddToPlayerScreen(0);
-	CompassUI->SetVisibility(ESlateVisibility::Collapsed);
+	if (CompassUIClass)
+	{
+		// コンパスのUIウィジェットを生成し、画面に追加する
+		CompassUI = CreateWidget<UCompassWidget>(this, CompassUIClass);
+		CompassUI->AddToPlayerScreen(0);
+		CompassUI->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
-	// 弾数カウンターのUIウィジェットを生成し、画面に追加する
-	BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
-	BulletCounterUI->AddToPlayerScreen(0);
-	BulletCounterUI->SetVisibility(ESlateVisibility::Collapsed);
+	if (BulletCounterUIClass)
+	{
+		// 弾数カウンターのUIウィジェットを生成し、画面に追加する
+		BulletCounterUI = CreateWidget<UBulletCounter>(this, BulletCounterUIClass);
+		BulletCounterUI->AddToPlayerScreen(0);
+		BulletCounterUI->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
-	// HPバーのUIウィジェットを作成し、画面に追加する
-	HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
-	HPBarUI->AddToPlayerScreen(1);
-	HPBarUI->SetVisibility(ESlateVisibility::Collapsed);
+	if (HPBarUIClass)
+	{
+		// HPバーのUIウィジェットを作成し、画面に追加する
+		HPBarUI = CreateWidget<UHPBar>(this, HPBarUIClass);
+		HPBarUI->AddToPlayerScreen(1);
+		HPBarUI->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (AimingUIClass)
+	{
+		// クロスヘアのUIウィジェットを作成し、画面に追加する
+		AimingUI = CreateWidget<UUserWidget>(this, AimingUIClass);
+		AimingUI->AddToPlayerScreen(1);
+		AimingUI->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
 	// 現在の HP を取得
 	AGWPlayerState* GWPS = Cast<AGWPlayerState>(PlayerState);
@@ -149,14 +166,20 @@ void AGWPlayerController::OnPawnDestroyed(AActor* DestroyedActor)
 
 void AGWPlayerController::OnBulletCountUpdated(int32 MagazineSize, int32 Bullets, bool Infinite)
 {
-	// UIに弾数を反映
-	BulletCounterUI->BP_UpdateBulletCount(MagazineSize, Bullets, Infinite);
+	if (BulletCounterUI)
+	{
+		// UIに弾数を反映
+		BulletCounterUI->BP_UpdateBulletCount(MagazineSize, Bullets, Infinite);
+	}
 }
 
 void AGWPlayerController::OnHPBarUpdated(float MaxHP, float CurrentHP)
 {
-	// UIにHPを反映
-	HPBarUI->BP_UpdateHPBar(MaxHP, CurrentHP);
+	if (HPBarUI)
+	{
+		// UIにHPを反映
+		HPBarUI->BP_UpdateHPBar(MaxHP, CurrentHP);
+	}
 }
 
 void AGWPlayerController::SetGameplayUIVisible(bool bVisible)
@@ -188,5 +211,10 @@ void AGWPlayerController::SetGameplayUIVisible(bool bVisible)
 				HPBarUI->BP_UpdateHPBar(AttributeSet->GetMaxHealth(), AttributeSet->GetHealth());
 			}
 		}
+	}
+
+	if (AimingUI)
+	{
+		AimingUI->SetVisibility(NewVisibility);
 	}
 }

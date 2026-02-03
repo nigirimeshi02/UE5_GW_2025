@@ -1024,3 +1024,25 @@ void AGWPlayer::AddWeaponInit()
 {
 	AddWeaponClass(InitWeapon);
 }
+
+void AGWPlayer::Initialize()
+{
+	AGWPlayerController* GWPC = Cast<AGWPlayerController>(GetController());
+
+	AGWPlayerState* GWPS = Cast<AGWPlayerState>(GWPC->PlayerState);
+
+	UPlayerAttributeSet* AttributeSet = GWPS->GetAttributeSet();
+
+	AGWGameMode* GWGM = Cast<AGWGameMode>(UGameplayStatics::GetGameMode(this));
+
+	if (GWGM)
+	{
+		AttributeSet->Initialize();
+
+		UpdateHPHUD(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+	}
+
+	OwnedWeapons.Empty();
+
+	AddWeaponInit();
+}

@@ -6,6 +6,8 @@
 #include "MyGameInstance.h"
 #include "Engine/LevelStreaming.h" // ★これが必要です
 #include "Misc/PackageName.h"      // パスから短い名前を取り出すのに必要
+#include "Kismet/GameplayStatics.h"
+#include "Player/GWPlayer.h"
 
 AGWGameMode::AGWGameMode()
 {
@@ -49,6 +51,11 @@ void AGWGameMode::OnGameOver()
 	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
 	if (GI)
 	{
+        PlayerLife = 3;
+
+        AGWPlayer* GP = Cast<AGWPlayer>(UGameplayStatics::GetPlayerCharacter(this, 0));
+        GP->Initialize();
+
 		// 引数: (次のレベル, 今のレベル, 次のレベルのスタート地点タグ)
 		GI->ChangeLevelAsync(TEXT("LVL_GameOver"), CurrentLevelName, TEXT("GameOver"));
 

@@ -389,6 +389,9 @@ public:
 	// 初期武器の追加
 	void AddWeaponInit();
 
+	// 初期化関数
+	void Initialize();
+
 public:
 	// 一人称メッシュを取得
 	USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }

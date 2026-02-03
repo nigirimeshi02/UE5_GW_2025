@@ -51,11 +51,6 @@ void AGWGameMode::OnGameOver()
 	UMyGameInstance* GI = Cast<UMyGameInstance>(GetGameInstance());
 	if (GI)
 	{
-        PlayerLife = 3;
-
-        AGWPlayer* GP = Cast<AGWPlayer>(UGameplayStatics::GetPlayerCharacter(this, 0));
-        GP->Initialize();
-
 		// 引数: (次のレベル, 今のレベル, 次のレベルのスタート地点タグ)
 		GI->ChangeLevelAsync(TEXT("LVL_GameOver"), CurrentLevelName, TEXT("GameOver"));
 

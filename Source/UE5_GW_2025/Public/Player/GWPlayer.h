@@ -390,6 +390,7 @@ public:
 	void AddWeaponInit();
 
 	// 初期化関数
+	UFUNCTION(BlueprintCallable)
 	void Initialize();
 
 public:
